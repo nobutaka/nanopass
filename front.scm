@@ -153,6 +153,60 @@
           (union head-poked tail-poked)
           (union head-free tail-free)))))
 
+;; ---------- assignmentless-form:  Removing the set! form.
+
+(define (assignmentless-form exp)
+  (let ([qdecls (cadr exp)]
+        [subexp (caddr exp)])
+    (let ([new-subexp (assignment-convert subexp '())])
+      `(let ,qdecls ,new-subexp))))
+
+(define (assignment-convert exp env)
+  (if (not (pair? exp))
+      (if (memq exp env)
+          `(vector-ref ,exp (quote 0))
+          exp)
+      (match exp
+        [('quote obj) `(quote ,obj)]
+        [('begin a b)
+         (let ([a-exp (assignment-convert a env)]
+               [b-exp (assignment-convert b env)])
+           `(begin ,a-exp ,b-exp))]
+        [('if t c a)
+         (let ([t-exp (assignment-convert t env)]
+               [c-exp (assignment-convert c env)]
+               [a-exp (assignment-convert a env)])
+           `(if ,t-exp ,c-exp ,a-exp))]
+        [('set! v e)
+         (let ([e-exp (assignment-convert e env)])
+           `(vector-set! ,v (quote 0) ,e-exp))]
+        [('lambda formals poked free body)
+         (let ([poked (cdadr poked)] ; remove the quote
+               [free (cdadr free)])
+           (let ([new-env (union poked (difference env formals))])
+             (let ([body-exp (assignment-convert body new-env)])
+               (if (null? poked)
+                   `(lambda ,formals (quote (free . ,free)) ,body-exp)
+                   (let ([poked-exps
+                           (map (lambda (pv) `(vector ,pv)) poked)]
+                         [new-frees
+                           (union free (difference formals poked))])
+                     `(lambda ,formals
+                        (quote (free . ,free))
+                        ((lambda ,poked
+                           (quote (free . ,new-frees))
+                           ,body-exp) .
+                           ,poked-exps)))))))]
+        [else
+          (let ([rator (car exp)]
+                [rands (cdr exp)])
+            (let ([rator-exp (assignment-convert rator env)]
+                  [rand-exps (assignment-convert-list rands env)])
+              `(,rator-exp . ,rand-exps)))])))
+
+(define (assignment-convert-list ls env)
+  (map (lambda (e) (assignment-convert e env)) ls))
+
 ;; ---------- Utility procedures
 
 (define (union a b)

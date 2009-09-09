@@ -207,6 +207,27 @@
 (define (assignment-convert-list ls env)
   (map (lambda (e) (assignment-convert e env)) ls))
 
+;; ---------- Immediate-literal Form:  Lifting heap immediates
+
+(define (immediate-literal-form exp)
+  (let ([quoted (cadr exp)]
+        [exp (caddr exp)])
+    (if (null? quoted) exp
+        (let ([q-exps (map heap-literal-destruct (map cadadr quoted))]
+              [q-vars (map car quoted)])
+          (let ([exp `((lambda ,q-vars (quote (free)) ,exp) .
+                       ,q-exps)])
+            exp)))))
+
+(define (heap-literal-destruct obj)
+  (cond
+    [(or (number? obj) (null? obj))
+     `(quote ,obj)]
+    [(pair? obj)
+     (let ([car-exp (heap-literal-destruct (car obj))]
+           [cdr-exp (heap-literal-destruct (cdr obj))])
+       `(cons ,car-exp ,cdr-exp))]))
+
 ;; ---------- Utility procedures
 
 (define (union a b)

@@ -228,7 +228,51 @@
            [cdr-exp (heap-literal-destruct (cdr obj))])
        `(cons ,car-exp ,cdr-exp))]))
 
+;; ---------- Code-generation Form: converting variables and lambdas
+
+(define (code-generation-form exp)
+  (cg-form-convert exp '() '()))
+
+(define (cg-form-convert exp bounds frees)
+  (if (not (pair? exp))
+      (let ([i (my-list-index exp bounds)])
+        (if i
+            `(bound ,i ,exp)
+            (let ([i (my-list-index exp frees)])
+              (if i
+                  `(free ,i ,exp)
+                  exp))))               ; inline
+      (match exp
+        [('quote obj)
+         `(quote ,obj)]
+        [('begin a b)
+         (let ([a-exp (cg-form-convert a bounds frees)]
+               [b-exp (cg-form-convert b bounds frees)])
+           `(begin ,a-exp ,b-exp))]
+        [('if t c a)
+         (let ([t-exp (cg-form-convert t bounds frees)]
+               [c-exp (cg-form-convert c bounds frees)]
+               [a-exp (cg-form-convert a bounds frees)])
+           `(if ,t-exp ,c-exp ,a-exp))]
+        [('lambda formals quoted-frees body)
+         (let ([free (cdadr quoted-frees)]) ; getting rid of the quote
+           (let ([free-exps (cg-form-convert-list free bounds frees)]
+                 [body-exp (cg-form-convert body formals free)])
+             `(build-closure (lambda ,formals ,body-exp) .
+                ,free-exps)))]
+        [else
+         (let ([rator (car exp)] [rands (cdr exp)])
+           (let ([rator-exp (cg-form-convert rator bounds frees)]
+                 [rand-exps (cg-form-convert-list rands bounds frees)])
+             `(,rator-exp . ,rand-exps)))])))
+
+(define (cg-form-convert-list ls bounds frees)
+  (map (lambda (e) (cg-form-convert e bounds frees)) ls))
+
 ;; ---------- Utility procedures
+
+(define (my-list-index v ls)
+  (list-index (lambda (x) (eq? x v)) ls))
 
 (define (union a b)
   (lset-union eq? a b))

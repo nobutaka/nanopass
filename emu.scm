@@ -1,3 +1,6 @@
+(use srfi-1)
+(use util.match)
+
 (define (x86 program)
   (x86-assemble program "t.s")
   (printf "running gcc\n")
@@ -21,18 +24,36 @@
         [else thing]))))
 
 (define (x86-spit ls)
-  (define (print-elem obj delim)
+  (define (print-elem obj)
     (cond
       [(pair? obj)
        (match obj
          [('reg name)
-          (printf "~a%~s" delim name)]
+          (printf "%~s" name)]
          [('reg-off reg off)
           (let ([name (cadr reg)])
-            (printf "~a~s(%~s)" delim off name))])]
-       [(string? obj)
-        (printf "\t# ~a " obj)]
-       [else (printf "~a~a" delim obj)]))
+            (printf "~s(%~s)" off name))]
+         [('delim)
+          (printf ", ")]
+         [('near-ptr)
+          (printf "*")])]
+      [(string? obj)
+       (printf "\t# ~a " obj)]
+      [else (printf "~a" obj)]))
+  (define (insert-delimiter rands)
+    (reverse
+      (fold (lambda (exp ls)
+              (if (string? exp)
+                  (cons exp ls)
+                  (cons exp (cons '(delim) ls))))
+            (cons (car rands) '())
+            (cdr rands))))
+  (define (unparse-near-ptr rands)
+    (append-map (lambda (exp)
+                  (match exp
+                    [('near-ptr reg) `((near-ptr) ,reg)]
+                    [_ (list exp)]))
+                rands))
   (printf "\t.code32\n")
   (printf "\t.align 4\n")
   (printf "\t.global _scheme_entry\n")
@@ -45,12 +66,11 @@
           [(label)
            (printf "~a:" (cadr inst))]
           [else
-           (let ([first (cadr inst)]
-                 [rest (cddr inst)])
+           (let ([rands (unparse-near-ptr
+                          (insert-delimiter
+                            (cdr inst)))])
              (printf "\t~s\t" (car inst))
-             (print-elem first "")
-             (for-each (lambda (x) (print-elem x ", "))
-               rest))]))
+             (for-each print-elem rands))]))
       (newline)
       (loop (cdr ls)))))
 

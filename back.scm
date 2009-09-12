@@ -56,7 +56,7 @@
 (define (cg-jump lab nextlab)
   (instructions
     `(movl (ebp 0) ebx)
-    `(jmp ebx)))
+    `(jmp (near-ptr ebx))))
 
 (define (cg-set-branch obj dd cd nextlab)
   (instructions

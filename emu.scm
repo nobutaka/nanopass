@@ -39,6 +39,8 @@
           (printf "*")])]
       [(string? obj)
        (printf "\t# ~a " obj)]
+      [(number? obj)
+       (printf "$~a" obj)]
       [else (printf "~a" obj)]))
   (define (insert-delimiter rands)
     (reverse

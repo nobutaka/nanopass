@@ -53,9 +53,9 @@
 (define (varref->address exp)
   (match exp
     [('bound n name)
-     `(fp ,(* (+ n 1) ws))]
+     `(ebp ,(* (+ n 1) ws))]
     [('free n name)
-     `(cp ,(* (+ n 2) ws))]))
+     `(esi ,(* (+ n 2) ws))]))
 
 (define (cg exp fs dd cd nextlab)
   (match exp
@@ -83,7 +83,38 @@
              (cg-type-tag closure-tag 'eax)
              (cg-store 'eax dd)
              `(comment "end build-closure")
-             (cg-jump cd nextlab))))]))
+             (cg-jump cd nextlab))))]
+    [_
+     (let ([rator (car exp)]
+           [rands (cdr exp)]
+           [ratorlab (gen-label "endrator")])
+       (cond
+         [(symbol? rator)
+          (error "Not implemented")]
+         [(eq? cd 'return)
+          (instructions
+            (cg-rands rands fs)
+            (cg rator (+ fs (* (length rands) ws)) 'eax ratorlab ratorlab)
+            `(label ,ratorlab)
+            (cg-shuffle fs (length rands))
+            `(movl ,mask esi)
+            `(notl esi)
+            `(andl eax esi)
+            `(movl (esi ,(* 1 ws)) eax)
+            `(jmp (near-ptr eax)))]
+         [else
+          (error "Not implemented")]))]))
+
+
+
+(define (cg-shuffle fs num)
+  (let loop ([top fs] [bot ws] [num num])
+    (if (zero? num)
+        (instructions)
+        (instructions
+          `(movl (ebp ,top) ebx)
+          `(movl ebx (ebp ,bot))
+          (loop (+ top ws) (+ bot ws) (- num 1))))))
 
 (define (cg-jump lab nextlab)
   (if (eq? lab 'return)
@@ -110,6 +141,15 @@
   (instructions
     `(movl ,(encode obj) ,dd ,(format "~s" obj))
     (cg-jump cd nextlab)))
+
+(define (cg-rands rands fs)
+  (if (null? rands)
+      (instructions)
+      (let ([randlab (gen-label "rand")])
+        (instructions
+          (cg (car rands) fs `(ebp ,fs) randlab randlab)
+          `(label ,randlab)
+          (cg-rands (cdr rands) (+ fs ws))))))
 
 (define (cg-type-tag tag reg)
   `(orl ,tag ,reg))

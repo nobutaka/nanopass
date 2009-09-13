@@ -10,6 +10,7 @@ call_scheme:
     movl %edi, 20(%ecx)
     movl %ebp, 24(%ecx)
     movl %esp, 28(%ecx)
+    movl 12(%esp), %edi # heap
     movl 8(%esp), %ebp  # stack
     movl %ecx, (%ebp)   # push context address to our stack
     addl $4, %ebp

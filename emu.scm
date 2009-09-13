@@ -4,7 +4,7 @@
 (define (x86 program)
   (x86-assemble program "t.s")
   (printf "running gcc\n")
-  (sys-system "gcc t.s -o a.out"))
+  (sys-system "gcc -m32 startup.c call_scheme.s t.s -o a.out"))
 
 (define (x86-assemble code file)
   (with-output-to-file file

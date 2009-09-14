@@ -37,10 +37,12 @@
             (printf "~s(%~s)" off name))]
          [('delim)
           (printf ", ")]
-         [('asterisk)
-          (printf "*")]
-         [('dollar)
-          (printf "$")])]
+         [('near x)
+          (printf "*")
+          (print-elem x)]
+         [('imm x)
+          (printf "$")
+          (print-elem x)])]
       [(string? obj)
        (printf "\t# ~a " obj)]
       [(number? obj)
@@ -54,18 +56,6 @@
                   (cons exp (cons '(delim) ls))))
             (cons (car rands) '())
             (cdr rands))))
-  (define (unparse-near-ptr rands)
-    (append-map (lambda (exp)
-                  (match exp
-                    [('near-ptr x) `((asterisk) ,x)]
-                    [_ (list exp)]))
-                rands))
-  (define (unparse-imm rands)
-    (append-map (lambda (exp)
-                  (match exp
-                    [('imm x) `((dollar) ,x)]
-                    [_ (list exp)]))
-                rands))
   (printf "\t.code32\n")
   (printf "\t.align 4\n")
   (printf "\t.global _scheme_entry\n")
@@ -78,10 +68,7 @@
           [(label)
            (printf "~a:" (cadr inst))]
           [else
-           (let ([rands (unparse-imm
-                          (unparse-near-ptr
-                            (insert-delimiter
-                              (cdr inst))))])
+           (let ([rands (insert-delimiter (cdr inst))])
              (printf "\t~s\t" (car inst))
              (for-each print-elem rands))]))
       (newline)

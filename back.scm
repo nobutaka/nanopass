@@ -103,7 +103,7 @@
             `(notl cp)
             `(andl ac cp)
             `(movl (cp ,(* 1 ws)) ac)
-            `(jmp (near-ptr ac)))]
+            `(jmp (near ac)))]
          [else
           (error "Not implemented")]))]))
 
@@ -122,7 +122,7 @@
   (if (eq? lab 'return)
       (instructions
         `(movl (fp 0) t1)
-        `(jmp (near-ptr t1)))
+        `(jmp (near t1)))
       (if (eq? lab nextlab)
           (instructions)
           (instructions

@@ -47,20 +47,20 @@
              (instructions
                `(label ,label)
                (cg body (* (+ (length formals) 1) ws)
-                 'eax 'return 'ignored)
+                 'ac 'return 'ignored)
                (cg-code))])))))
 
 (define (varref->address exp)
   (match exp
     [('bound n name)
-     `(ebp ,(* (+ n 1) ws))]
+     `(fp ,(* (+ n 1) ws))]
     [('free n name)
-     `(esi ,(* (+ n 2) ws))]))
+     `(cp ,(* (+ n 2) ws))]))
 
 (define (cg exp fs dd cd nextlab)
   (match exp
     [('bound n name)
-     (cg-load-branch `(ebp ,(* (+ n 1) ws)) dd cd nextlab)]
+     (cg-load-branch `(fp ,(* (+ n 1) ws)) dd cd nextlab)]
     [('quote obj)
      (cg-set-branch obj dd cd nextlab)]
     [('build-closure code . fvars)
@@ -70,20 +70,20 @@
            (set! todo (cons (list codelab code) todo))
            (instructions
              `(comment "build-closure")
-             (cg-allocate (+ (length fvars) 2) 'eax)
-             `(movl ,(length fvars) ebx)
-             `(movl ebx (eax 0))
-             `(movl (imm ,codelab) ebx)
-             `(movl ebx (eax ,(* 1 ws)))
+             (cg-allocate (+ (length fvars) 2) 'ac)
+             `(movl ,(length fvars) t1)
+             `(movl t1 (ac 0))
+             `(movl (imm ,codelab) t1)
+             `(movl t1 (ac ,(* 1 ws)))
              (let f ([ls fvars] [pos 2])
                (if (null? ls)
                    (instructions)
                    (instructions
-                     `(movl ,(varref->address (car ls)) edx)
-                     `(movl edx (eax ,(* pos ws)))
+                     `(movl ,(varref->address (car ls)) t3)
+                     `(movl t3 (ac ,(* pos ws)))
                      (f (cdr ls) (+ pos 1)))))
-             (cg-type-tag closure-tag 'eax)
-             (cg-store 'eax dd)
+             (cg-type-tag closure-tag 'ac)
+             (cg-store 'ac dd)
              `(comment "end build-closure")
              (cg-jump cd nextlab))))]
     [_
@@ -96,14 +96,14 @@
          [(eq? cd 'return)
           (instructions
             (cg-rands rands fs)
-            (cg rator (+ fs (* (length rands) ws)) 'eax ratorlab ratorlab)
+            (cg rator (+ fs (* (length rands) ws)) 'ac ratorlab ratorlab)
             `(label ,ratorlab)
             (cg-shuffle fs (length rands))
-            `(movl ,mask esi)
-            `(notl esi)
-            `(andl eax esi)
-            `(movl (esi ,(* 1 ws)) eax)
-            `(jmp (near-ptr eax)))]
+            `(movl ,mask cp)
+            `(notl cp)
+            `(andl ac cp)
+            `(movl (cp ,(* 1 ws)) ac)
+            `(jmp (near-ptr ac)))]
          [else
           (error "Not implemented")]))]))
 
@@ -114,15 +114,15 @@
     (if (zero? num)
         (instructions)
         (instructions
-          `(movl (ebp ,top) ebx)
-          `(movl ebx (ebp ,bot))
+          `(movl (fp ,top) t1)
+          `(movl t1 (fp ,bot))
           (loop (+ top ws) (+ bot ws) (- num 1))))))
 
 (define (cg-jump lab nextlab)
   (if (eq? lab 'return)
       (instructions
-        `(movl (ebp 0) ebx)
-        `(jmp (near-ptr ebx)))
+        `(movl (fp 0) t1)
+        `(jmp (near-ptr t1)))
       (if (eq? lab nextlab)
           (instructions)
           (instructions
@@ -148,8 +148,8 @@
      (let ([register (car dd)]
            [offset (cadr dd)])
        (instructions
-         `(movl ,loc ebx)
-         `(movl ebx (,register ,offset))
+         `(movl ,loc t1)
+         `(movl t1 (,register ,offset))
          (cg-jump cd nextlab)))]
     [else
      (instructions
@@ -166,7 +166,7 @@
       (instructions)
       (let ([randlab (gen-label "rand")])
         (instructions
-          (cg (car rands) fs `(ebp ,fs) randlab randlab)
+          (cg (car rands) fs `(fp ,fs) randlab randlab)
           `(label ,randlab)
           (cg-rands (cdr rands) (+ fs ws))))))
 
@@ -176,8 +176,8 @@
 (define (cg-allocate n target)
   (let ([n (if (even? n) n (+ n 1))])
     (instructions
-      `(movl edi ,target)
-      `(addl ,(* n ws) edi))))
+      `(movl ap ,target)
+      `(addl ,(* n ws) ap))))
 
 (define gen-label
   (let ([n 0])

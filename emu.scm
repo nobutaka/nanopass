@@ -12,15 +12,17 @@
       (x86-spit (registerize code)))))
 
 (define registerize
-  (let ([regs '(ebp esi edi eax ebx ecx edx)])
+  (let ([regs '((fp . ebp) (cp . esi) (ap . edi) (ac . eax) (t1 . ebx) (t2 . ecx) (t3 . edx))])
     (lambda (thing)
       (cond
         [(pair? thing)
-         (if (memq (car thing) regs)
-             `(reg-off (reg ,(car thing)) ,(cadr thing))
-             (map registerize thing))]
-        [(and (symbol? thing) (memq thing regs))
-         `(reg ,thing)]
+         (let ([x (assq (car thing) regs)])
+           (if x
+               `(reg-off (reg ,(cdr x)) ,(cadr thing))
+               (map registerize thing)))]
+        [(and (symbol? thing) (assq thing regs)) =>
+         (lambda (x)
+           `(reg ,(cdr x)))]
         [else thing]))))
 
 (define (x86-spit ls)

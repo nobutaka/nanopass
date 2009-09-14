@@ -84,7 +84,7 @@
          (cg a fs dd cd nextlab)))]
     [('build-closure code . fvars)
      (if (eq? dd 'effect)
-         (error "build-closure Not implemented")
+         (error "Error in build-closure: Not implemented")
          (let ([codelab (gen-label "code")])
            (set! todo (cons (list codelab code) todo))
            (instructions
@@ -105,7 +105,7 @@
              (cg-store 'ac dd)
              `(comment "end build-closure")
              (cg-jump cd nextlab))))]
-    [_
+    [else
      (let ([rator (car exp)]
            [rands (cdr exp)]
            [ratorlab (gen-label "endrator")])
@@ -124,7 +124,7 @@
             `(movl (cp ,(* 1 ws)) ac)
             `(jmp (near ac)))]
          [else
-          (error "app Not implemented")]))]))
+          (error "Error in else: Not implemented")]))]))
 
 
 
@@ -252,7 +252,7 @@
 
 (define (cg-true-inline rander rands fs dd cd nextlab code)
   (if (eq? dd 'effect)
-      (error "cg-true-inline Not implemented")
+      (error "Error in cg-true-inline: Not implemented")
       (instructions
         (rander rands fs)
         code

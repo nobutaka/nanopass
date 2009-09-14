@@ -5,7 +5,7 @@
 ;; ---------- Core Form
 
 (define *prim-names*
-  '(vector))
+  '(+ - = eq?))
 
 (define *keywords*
   '(quote begin if set! lambda))
@@ -17,7 +17,7 @@
   (if (not (pair? exp))
       (cond
         [(symbol? exp) exp]
-        [(number? exp)
+        [(or (number? exp) (boolean? exp))
          `(quote ,exp)]
         [else
          (error "Bad expression" exp)])
@@ -82,7 +82,7 @@
               (errorf "Unbound variable ~s" exp)))
       (match exp
         [('quote obj)
-         (if (number? obj)
+         (if (or (number? obj) (null? obj) (boolean? obj))
              (values `(quote ,obj) '() '() '())
              (let ([var (gen-qsym)])
                (values var (list (list var exp)) '() (unit-set var))))]
@@ -221,7 +221,7 @@
 
 (define (heap-literal-destruct obj)
   (cond
-    [(or (number? obj) (null? obj))
+    [(or (boolean? obj) (number? obj) (null? obj))
      `(quote ,obj)]
     [(pair? obj)
      (let ([car-exp (heap-literal-destruct (car obj))]

@@ -2,6 +2,11 @@
 
 (define mask        #b111)
 
+(define bool-tag #b00000001)
+(define null-tag #b00001001)
+
+(define imm-mask #b11111111)
+
 (define ws 4)
 
 (define encode
@@ -14,6 +19,9 @@
            [(and (<= (- numtop) obj) (< obj 0)) (* (+ numtop obj) (+ mask 1))]
            [else
             (error "~s is out of range" obj)])]
+        [(boolean? obj)
+         (+ (* (if obj 1 0) (+ imm-mask 1)) bool-tag)]
+        [(null? obj) null-tag]
         [else
          (error "~s not encodable" obj)]))))
 
@@ -65,9 +73,18 @@
      (cg-load-branch `(cp ,(* (+ n 2) ws)) dd cd nextlab)]
     [('quote obj)
      (cg-set-branch obj dd cd nextlab)]
+    [('if t c a)
+     (let ([truelab (gen-label "iftrue")]
+           [falselab (gen-label "iffalse")])
+       (instructions
+         (cg t fs 'effect (join-labels truelab falselab) truelab)
+         `(label ,truelab)
+         (cg c fs dd cd falselab)
+         `(label ,falselab)
+         (cg a fs dd cd nextlab)))]
     [('build-closure code . fvars)
      (if (eq? dd 'effect)
-         (error "Not implemented")
+         (error "build-closure Not implemented")
          (let ([codelab (gen-label "code")])
            (set! todo (cons (list codelab code) todo))
            (instructions
@@ -94,7 +111,7 @@
            [ratorlab (gen-label "endrator")])
        (cond
          [(symbol? rator)
-          (error "Not implemented")]
+          (cg-inline exp rator rands fs dd cd nextlab)]
          [(eq? cd 'return)
           (instructions
             (cg-rands rands fs)
@@ -107,7 +124,7 @@
             `(movl (cp ,(* 1 ws)) ac)
             `(jmp (near ac)))]
          [else
-          (error "Not implemented")]))]))
+          (error "app Not implemented")]))]))
 
 
 
@@ -130,6 +147,18 @@
           (instructions
             `(jmp ,lab)))))
 
+(define (cg-branch truelab falselab nextlab jump-if-true jump-if-false)
+  (instructions
+    (cond
+      [(eq? truelab nextlab)
+       `(,jump-if-false ,falselab)]
+      [(eq? falselab nextlab)
+       `(,jump-if-true ,truelab)]
+      [else
+        (instructions
+          `(,jump-if-true ,truelab)
+          `(jmp ,falselab))])))
+
 (define (cg-store src dest)
   (cond
     [(eq? dest 'effect)
@@ -145,7 +174,16 @@
 (define (cg-load-branch loc dd cd nextlab)
   (cond
     [(eq? dd 'effect)
-     (error "Not implemented")]
+     (cond
+       [(pair? cd)
+        (let ([truelab (car cd)]
+              [falselab (cadr cd)])
+          (instructions
+            `(movl ,loc t1)
+            `(cmpl ,(encode #f) t1)
+            (cg-branch truelab falselab nextlab 'jne 'je)))]
+       [else
+        (cg-jump cd nextlab)])]
     [(pair? dd)
      (let ([register (car dd)]
            [offset (cadr dd)])
@@ -172,6 +210,69 @@
           `(label ,randlab)
           (cg-rands (cdr rands) (+ fs ws))))))
 
+(define (cg-effect-rands ls fs)
+  (if (null? ls)
+      (instructions)
+      (let ([randlab (gen-label "rand")])
+        (instructions
+          (cg (car ls) fs 'effect randlab randlab)
+          `(label ,randlab)
+          (cg-effect-rands (cdr ls) fs)))))
+
+(define (cg-binary-rands rands fs)
+  (let ([r0 (car rands)]
+        [r1 (cadr rands)])
+    (let ([r0lab (gen-label "binary0")]
+          [r1lab (gen-label "binary1")])
+      (instructions
+        (cg r0 fs `(fp ,fs) r0lab r0lab)
+        `(label ,r0lab)
+        (cg r1 (+ fs (* 1 ws)) 'ac r1lab r1lab)
+        `(label ,r1lab)
+        `(movl ac t2)
+        `(movl (fp ,fs) t1)))))
+
+(define (cg-inline exp name rands fs dd cd nextlab)
+  (case name
+    [(+)
+     (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+       (instructions
+         `(movl t1 ac)
+         `(addl t2 ac)))]
+    [(-)
+     (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+       (instructions
+         `(movl t1 ac)
+         `(subl t2 ac)))]
+    [(= eq?)
+     (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
+       `(cmpl t1 t2))]
+    [else
+     (error "sanity-check: bad primitive ~s" name)]))
+
+(define (cg-true-inline rander rands fs dd cd nextlab code)
+  (if (eq? dd 'effect)
+      (error "cg-true-inline Not implemented")
+      (instructions
+        (rander rands fs)
+        code
+        (cg-store 'ac dd)
+        (cg-jump cd nextlab))))
+
+(define (cg-binary-pred-inline exp rands fs dd cd nextlab trueinst falseinst code)
+  (if (eq? dd 'effect)
+      (if (pair? cd)
+          (let ([truelab (car cd)]
+                [falselab (cadr cd)])
+            (instructions
+              (cg-binary-rands rands fs)
+              code
+              (cg-branch truelab falselab nextlab trueinst falseinst)))
+          (instructions
+            (cg-effect-rands rands fs)
+            (cg-jump cd nextlab)))
+      (cg `(if ,exp '#t '#f) fs dd cd nextlab)))
+
 (define (cg-type-tag tag reg)
   `(orl ,tag ,reg))
 
@@ -180,6 +281,15 @@
     (instructions
       `(movl ap ,target)
       `(addl ,(* n ws) ap))))
+
+(define (join-labels a b)
+  (cond
+    [(pair? a)
+     (join-labels (car a) b)]
+    [(pair? b)
+     (list a (cadr b))]
+    [else
+     (list a b)]))
 
 (define gen-label
   (let ([n 0])

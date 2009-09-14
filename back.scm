@@ -59,6 +59,8 @@
 
 (define (cg exp fs dd cd nextlab)
   (match exp
+    [('bound n name)
+     (cg-load-branch `(ebp ,(* (+ n 1) ws)) dd cd nextlab)]
     [('quote obj)
      (cg-set-branch obj dd cd nextlab)]
     [('build-closure code . fvars)
@@ -136,6 +138,23 @@
      (if (eq? src dest)
          (instructions)
          `(movl ,src ,dest))]))
+
+
+(define (cg-load-branch loc dd cd nextlab)
+  (cond
+    [(eq? dd 'effect)
+     (error "Not implemented")]
+    [(pair? dd)
+     (let ([register (car dd)]
+           [offset (cadr dd)])
+       (instructions
+         `(movl ,loc ebx)
+         `(movl ebx (,register ,offset))
+         (cg-jump cd nextlab)))]
+    [else
+     (instructions
+       `(movl ,loc ,dd)
+       (cg-jump cd nextlab))]))
 
 (define (cg-set-branch obj dd cd nextlab)
   (instructions

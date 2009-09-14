@@ -61,6 +61,8 @@
   (match exp
     [('bound n name)
      (cg-load-branch `(fp ,(* (+ n 1) ws)) dd cd nextlab)]
+    [('free n name)
+     (cg-load-branch `(cp ,(* (+ n 2) ws)) dd cd nextlab)]
     [('quote obj)
      (cg-set-branch obj dd cd nextlab)]
     [('build-closure code . fvars)

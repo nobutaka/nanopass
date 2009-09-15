@@ -60,7 +60,11 @@ print(PTR x)
     }
 }
 
-void gc()
+void gc(int *array)
 {
+    int i;
     printf("gc called\n");
+    for (i=0; i<3; i++) {
+        printf("%x\n", array[i]);
+    }
 }

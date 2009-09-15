@@ -304,7 +304,12 @@
      (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
        (instructions
          `(comment "gc")
+         `(pushl 3)
+         `(pushl 2)
+         `(pushl 1)
+         `(pushl sp)
          `(call gc)
+         `(addl ,(* 4 ws) sp)
          `(comment "end gc")))]
     [else
      (error "sanity-check: bad primitive ~s" name)]))

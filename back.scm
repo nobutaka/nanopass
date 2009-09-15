@@ -1,4 +1,5 @@
 (define closure-tag #b110)
+(define vector-tag  #b101)
 
 (define mask        #b111)
 
@@ -232,6 +233,24 @@
         `(movl ac t2)
         `(movl (fp ,fs) t1)))))
 
+(define (cg-ternary-rands rands fs)
+  (let ([r0 (car rands)]
+        [r1 (cadr rands)]
+        [r2 (caddr rands)])
+    (let ([r0lab (gen-label "ternary0")]
+          [r1lab (gen-label "ternary1")]
+          [r2lab (gen-label "ternary2")])
+      (instructions
+        (cg r0 fs `(fp ,fs) r0lab r0lab )
+        `(label ,r0lab)
+        (cg r1 (+ fs (* 1 ws)) `(fp ,(+ fs (* 1 ws))) r1lab r1lab)
+        `(label ,r1lab)
+        (cg r2 (+ fs (* 2 ws)) 'ac r2lab r2lab)
+        `(label ,r2lab)
+        `(movl ac t3)
+        `(movl (fp ,(+ fs (* 1 ws))) t2)
+        `(movl (fp ,fs) t1)))))
+
 (define (cg-inline exp name rands fs dd cd nextlab)
   (case name
     [(+)
@@ -247,12 +266,55 @@
     [(= eq?)
      (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
        `(cmpl t1 t2))]
+    [(vector)
+     (cg-true-inline cg-rands rands fs dd cd nextlab
+       (instructions
+         `(comment "vector")
+         (cg-allocate (+ (length rands) 1) 'ac)
+         `(movl ,(length rands) t1)
+         `(movl t1 (ac 0))
+         (let loop ([fpos fs] [vpos 1] [num (length rands)])
+           (if (zero? num)
+               (instructions)
+               (instructions
+                 `(movl (fp ,fpos) t1)
+                 `(movl t1 (ac ,(* vpos 1) (- num 1))))))
+         (cg-type-tag vector-tag 'ac)
+         `(comment "end vector")))]
+    [(vector-ref)
+     (cg-ref-inline cg-binary-rands rands fs dd cd nextlab
+       (instructions
+         `(sarl 1 t2)
+         `(addl t2 t1)
+         `(movl (t1 ,(- ws vector-tag)) ac)))]
+    [(vector-set!)
+     (instructions
+       (cg-ternary-rands rands fs)
+       `(comment "vector-set")
+       `(sarl 1 t2)
+       `(addl t2 t1)
+       `(movl t3 (t1 ,(- ws vector-tag)))
+       `(comment "end vector-set")
+       (if (eq? dd 'effect)
+           (error "Error in vector-set!: Not implemented")
+           (instructions
+             (cg-store 't3 dd)        ; why not?
+             (cg-jump cd nextlab))))]
     [else
      (error "sanity-check: bad primitive ~s" name)]))
 
 (define (cg-true-inline rander rands fs dd cd nextlab code)
   (if (eq? dd 'effect)
       (error "Error in cg-true-inline: Not implemented")
+      (instructions
+        (rander rands fs)
+        code
+        (cg-store 'ac dd)
+        (cg-jump cd nextlab))))
+
+(define (cg-ref-inline rander rands fs dd cd nextlab code)
+  (if (eq? dd 'effect)
+      (error "Error in cg-ref-inline: Not implemented")
       (instructions
         (rander rands fs)
         code

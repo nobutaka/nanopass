@@ -5,7 +5,9 @@
 ;; ---------- Core Form
 
 (define *prim-names*
-  '(+ - = eq?))
+  '(+ - = eq?
+     vector vector-ref
+     vector-set!))
 
 (define *keywords*
   '(quote begin if set! lambda))
@@ -51,6 +53,13 @@
              (errorf "Bad formals ~s in ~s" formals exp)
              (let ([new-body (core-convert `(begin ,@bodies))])
                `(lambda ,formals ,new-body)))]
+        [('letrec decls . bodies)
+         (let ([vars (map car decls)]
+               [vals (map cadr decls)])
+           (let ([holders (map (lambda (x) #f) vars)]
+                 [assigns (map (lambda (v e) `(set! ,v ,e)) vars vals)])
+             (core-convert
+               `((lambda ,vars ,@assigns ,@bodies) ,@holders))))]
         [else
          (if (or (null? exp)
                  (not (list? exp))

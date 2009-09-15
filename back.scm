@@ -300,6 +300,12 @@
            (instructions
              (cg-store 't3 dd)        ; why not?
              (cg-jump cd nextlab))))]
+    [(gc)
+     (cg-ref-inline cg-rands rands fs dd cd nextlab
+       (instructions
+         `(comment "gc")
+         `(call gc)
+         `(comment "end gc")))]
     [else
      (error "sanity-check: bad primitive ~s" name)]))
 

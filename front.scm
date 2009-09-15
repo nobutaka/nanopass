@@ -7,7 +7,7 @@
 (define *prim-names*
   '(+ - = eq?
      vector vector-ref
-     vector-set!))
+     vector-set! gc))
 
 (define *keywords*
   '(quote begin if set! lambda))

@@ -3,17 +3,6 @@
 
 typedef long PTR;
 
-typedef struct {
-    void *eax;  /* 0    scratch  */
-    void *ebx;  /* 4    preserve */
-    void *ecx;  /* 8    scratch  */
-    void *edx;  /* 12   scratch  */
-    void *esi;  /* 16   preserve */
-    void *edi;  /* 20   preserve */
-    void *ebp;  /* 24   preserve */
-    void *esp;  /* 28   preserve */
-} context;
-
 #define number_tag  0
 #define immed_tag   1
 #define proc_tag    6
@@ -39,9 +28,8 @@ int main(int argc, char *argv[])
 {
     unsigned heap_size = default_heap_size;
     unsigned stack_size = default_stack_size;
-    context ctxt;
 
-    print(call_scheme(&ctxt,(PTR)malloc(4*stack_size),(PTR)malloc(4*heap_size)));
+    print(call_scheme((PTR)malloc(4*stack_size),(PTR)malloc(4*heap_size)));
 
     printf("\n");
     return 0;
@@ -70,4 +58,9 @@ print(PTR x)
         printf("#<garbage %x>", x);
         break;
     }
+}
+
+void gc()
+{
+    printf("gc called\n");
 }

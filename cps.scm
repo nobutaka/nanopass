@@ -46,7 +46,11 @@
                  `(lambda (,r)
                     ,(body (cdr exp) (cons r args)))))))
     (body exp '()))
-  (cps exp '(lambda (r) r)))
+  `((lambda (call/cc)
+      ,(cps exp '(lambda (r) r)))
+    (lambda (k f)
+      (f k (lambda (dummy-k result)
+             (k result))))))
 
 (define (new-var id)
   (gensym (symbol->string id)))

@@ -301,7 +301,7 @@
              (cg-store 't3 dd)        ; why not?
              (cg-jump cd nextlab))))]
     [(gc)
-     (cg-ref-inline cg-rands rands fs dd cd nextlab
+     (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
        (instructions
          `(comment "gc")
          `(call gc)

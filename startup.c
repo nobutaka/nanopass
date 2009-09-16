@@ -5,9 +5,12 @@ typedef long PTR;
 
 #define number_tag  0
 #define immed_tag   1
+#define vector_tag  5
 #define proc_tag    6
 
 #define mask        7
+
+#define tag_len     3
 
 #define bool_tag    0x01
 #define null_tag    0x09
@@ -17,18 +20,20 @@ typedef long PTR;
 #define imm_mask    0xFF
 
 #define TAG(x) ((x) & mask)
+#define UNTAG(x) ((x) & (~mask))
 #define IMMTAG(x) ((x) & imm_mask)
 
-#define default_heap_size 10000
-#define default_stack_size 10000
+#define VECTORLENGTH(x) (*((PTR *)UNTAG(x)) >> (tag_len+1))
+#define VECTORDATA(x) ((PTR *)UNTAG(x) + 1)
+
+#define default_heap_size (4*10000)
+#define default_stack_size (4*10000)
 
 extern PTR call_scheme();
 
-extern void *heap_end;
-
-typedef struct RootSetRec {
+struct rootset {
     unsigned int usedregs;
-    void *stack_end;
+    char *stack_end;
     union {
         unsigned int ind[6];
         struct {
@@ -40,16 +45,48 @@ typedef struct RootSetRec {
             unsigned int t3;
         } sym;
     } regs;
-} RootSet;
+};
+
+static char *stack_ptr;
+
+static unsigned int gc_space_size;
+static char *heap_ptr;
+extern char *heap_end;
+static char *gc_cur_space;
+static char *gc_to_space;
+
+void gc_initialize(unsigned int heap_size)
+{
+    gc_space_size = heap_size;
+    gc_cur_space = heap_ptr = calloc(1, gc_space_size);
+    gc_to_space = calloc(1, gc_space_size);
+    heap_end = heap_ptr + gc_space_size;
+}
+
+void gc(struct rootset *root)
+{
+    int i;
+    char *new_heap_ptr = calloc(1, gc_space_size);
+    gc_cur_space = new_heap_ptr;
+
+    printf(";; gc called\n");
+    printf("stack_ptr=%p\n", stack_ptr);
+    printf("stack_end=%p\n", root->stack_end);
+    for (i=0; i<6; i++) {
+        printf("regs[%d]=%#x\n", i, root->regs.ind[i]);
+    }
+    root->regs.sym.ap = (unsigned int)new_heap_ptr;
+    heap_end = new_heap_ptr + gc_space_size;
+    printf("gc_cur_space=%p\n", gc_cur_space);
+    printf("heap_end=%p\n", heap_end);
+}
 
 int main(int argc, char *argv[])
 {
-    unsigned heap_size = default_heap_size;
-    unsigned stack_size = default_stack_size;
-    void *heap_pointer = malloc(4*heap_size);
-    heap_end = heap_pointer + 4*heap_size;
+    stack_ptr = calloc(1, default_stack_size);
+    gc_initialize(default_heap_size);
 
-    print(call_scheme((PTR)malloc(4*stack_size),(PTR)heap_pointer));
+    print(call_scheme((PTR)stack_ptr,(PTR)gc_cur_space));
 
     printf("\n");
     return 0;
@@ -71,25 +108,28 @@ print(PTR x)
             break;
         }
         break;
+    case vector_tag:
+        {
+            int n;
+            PTR *p;
+            printf("#(");
+            n = VECTORLENGTH(x);
+            p = VECTORDATA(x);
+            if (n != 0) {
+                print(*p);
+                while (--n) {
+                    printf(" ");
+                    print(*++p);
+                }
+            }
+            printf(")");
+            break;
+        }
     case proc_tag:
         printf("<procedure>", x);
         break;
     default:
-        printf("#<garbage %x>", x);
+        printf("#<garbage %x>", (unsigned int)x);
         break;
     }
-}
-
-void gc(RootSet *rootset)
-{
-    int i;
-    void *new_heap_pointer = malloc(4*10000);
-    printf("gc called\n");
-    for (i=0; i<6; i++) {
-        printf("%x\n", rootset->regs.ind[i]);
-    }
-    rootset->regs.sym.ap = (unsigned int)new_heap_pointer;
-    heap_end = new_heap_pointer + 4*10000;
-    printf("new_heap_pointer: %x\n", new_heap_pointer);
-    printf("heap_end: %x\n", heap_end);
 }

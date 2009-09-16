@@ -3,6 +3,8 @@
 
 (define mask        #b111)
 
+(define tag-len 3)
+
 (define bool-tag #b00000001)
 (define null-tag #b00001001)
 
@@ -25,6 +27,9 @@
         [(null? obj) null-tag]
         [else
          (error "~s not encodable" obj)]))))
+
+(define (header len tag)
+  (ash (logior (ash len tag-len) tag) 1))
 
 (define (instructions . args)
   (cons 'instructions
@@ -91,7 +96,7 @@
            (instructions
              `(comment "build-closure")
              (cg-allocate (+ (length fvars) 2) 'ac fs '())
-             `(movl ,(length fvars) t1)
+             `(movl ,(header (length fvars) closure-tag) t1)
              `(movl t1 (ac 0))
              `(movl (imm ,codelab) t1)
              `(movl t1 (ac ,(* 1 ws)))
@@ -271,7 +276,7 @@
        (instructions
          `(comment "vector")
          (cg-allocate (+ (length rands) 1) 'ac (+ fs (* (length rands) ws)) '())
-         `(movl ,(length rands) t1)
+         `(movl ,(header (length rands) vector-tag) t1)
          `(movl t1 (ac 0))
          (let loop ([fpos fs] [vpos 1] [num (length rands)])
            (if (zero? num)

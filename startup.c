@@ -83,8 +83,13 @@ print(PTR x)
 void gc(RootSet *rootset)
 {
     int i;
+    void *new_heap_pointer = malloc(4*10000);
     printf("gc called\n");
     for (i=0; i<6; i++) {
         printf("%x\n", rootset->regs.ind[i]);
     }
+    rootset->regs.sym.ap = (unsigned int)new_heap_pointer;
+    heap_end = new_heap_pointer + 4*10000;
+    printf("new_heap_pointer: %x\n", new_heap_pointer);
+    printf("heap_end: %x\n", heap_end);
 }

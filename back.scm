@@ -357,7 +357,7 @@
       (instructions
         `(movl ap ,target)
         `(addl ,(* n ws) ap)
-        `(cmpl ap heap_end)
+        `(cmpl heap_end ap)
         `(jbe ,dontlab)
         (overflow)
         `(label ,dontlab))))

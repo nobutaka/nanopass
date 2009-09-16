@@ -1,4 +1,10 @@
-.section    ".text"
+.data
+
+    .global heap_end
+heap_end:
+    .long 0
+
+.text
 
     .code32
     .align 4
@@ -9,6 +15,7 @@ call_scheme:
     pushl %esi
     pushl %edi
     pushl %ebp
+    movl $0, %esi       # set cp to 0
     movl 8(%eax), %edi  # heap
     movl 4(%eax), %ebp  # stack
     movl $return_from_scheme, (%ebp)

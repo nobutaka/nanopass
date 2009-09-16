@@ -90,7 +90,7 @@
            (set! todo (cons (list codelab code) todo))
            (instructions
              `(comment "build-closure")
-             (cg-allocate (+ (length fvars) 2) 'ac)
+             (cg-allocate (+ (length fvars) 2) 'ac fs '())
              `(movl ,(length fvars) t1)
              `(movl t1 (ac 0))
              `(movl (imm ,codelab) t1)
@@ -270,7 +270,7 @@
      (cg-true-inline cg-rands rands fs dd cd nextlab
        (instructions
          `(comment "vector")
-         (cg-allocate (+ (length rands) 1) 'ac)
+         (cg-allocate (+ (length rands) 1) 'ac (+ fs (* (length rands) ws)) '())
          `(movl ,(length rands) t1)
          `(movl t1 (ac 0))
          (let loop ([fpos fs] [vpos 1] [num (length rands)])
@@ -278,7 +278,8 @@
                (instructions)
                (instructions
                  `(movl (fp ,fpos) t1)
-                 `(movl t1 (ac ,(* vpos 1) (- num 1))))))
+                 `(movl t1 (ac ,(* vpos ws)))
+                 (loop (+ fpos ws) (+ vpos 1) (- num 1)))))
          (cg-type-tag vector-tag 'ac)
          `(comment "end vector")))]
     [(vector-ref)
@@ -300,17 +301,17 @@
            (instructions
              (cg-store 't3 dd)        ; why not?
              (cg-jump cd nextlab))))]
-    [(gc)
+    [(foreign-call)
      (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
        (instructions
-         `(comment "gc")
+         `(comment "foreign-call")
          `(pushl 3)
          `(pushl 2)
          `(pushl 1)
          `(pushl sp)
-         `(call gc)
+         `(call foreign_call)
          `(addl ,(* 4 ws) sp)
-         `(comment "end gc")))]
+         `(comment "end foreign-call")))]
     [else
      (error "sanity-check: bad primitive ~s" name)]))
 
@@ -349,11 +350,47 @@
 (define (cg-type-tag tag reg)
   `(orl ,tag ,reg))
 
-(define (cg-allocate n target)
-  (let ([n (if (even? n) n (+ n 1))])
-    (instructions
-      `(movl ap ,target)
-      `(addl ,(* n ws) ap))))
+(define (cg-allocate n target fs usedregs)
+  (define (allocate overflow)
+    (let ([n (if (even? n) n (+ n 1))]
+          [dontlab (gen-label "dontgc")])
+      (instructions
+        `(movl ap ,target)
+        `(addl ,(* n ws) ap)
+        `(cmpl ap heap_end)
+        `(jbe ,dontlab)
+        (overflow)
+        `(label ,dontlab))))
+  (allocate
+    (lambda ()
+      (instructions
+        `(comment "gc")
+        `(subl ,(* n ws) ap)  ; revert ap
+        `(pushl t3)
+        `(pushl t2)
+        `(pushl t1)
+        `(pushl ac)
+        `(pushl ap)
+        `(pushl cp)
+        `(movl fp ac)
+        `(addl ,fs ac)
+        `(pushl ac)           ; push end of stack
+        (if (null? usedregs)
+            `(pushl 0)
+            (error "Error in cg-allocate: Not implemented"))
+        `(pushl sp)
+        `(call gc)
+        `(addl ,(* 3 ws) sp)  ; skip sp,usedregs,stack_end
+        `(popl cp)
+        `(popl ap)
+        `(popl ac)
+        `(popl t1)
+        `(popl t2)
+        `(popl t3)
+        (allocate
+          (lambda ()
+            (instructions)))  ; TODO: no more memory
+        `(comment "end gc")))))
 
 (define (join-labels a b)
   (cond

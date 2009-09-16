@@ -389,7 +389,10 @@
         `(popl t3)
         (allocate
           (lambda ()
-            (instructions)))  ; TODO: no more memory
+            (instructions
+              ; No more memory. This may causes segmentation fault.
+              `(movl 0 ac)
+              `(movl (ac 0) ac))))
         `(comment "end gc")))))
 
 (define (join-labels a b)

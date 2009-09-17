@@ -364,10 +364,10 @@
         `(addl ,(* n ws) ap)
         `(cmpl heap_end ap)
         `(jbe ,dontlab)
-        (overflow)
+        (overflow n)
         `(label ,dontlab))))
   (allocate
-    (lambda ()
+    (lambda (n)
       (instructions
         `(comment "gc")
         `(subl ,(* n ws) ap)  ; revert ap
@@ -384,7 +384,7 @@
             `(pushl 0)
             (error "Error in cg-allocate: Not implemented"))
         `(pushl sp)
-        `(call gc)
+        `(call gc_collect)
         `(addl ,(* 3 ws) sp)  ; skip sp,usedregs,stack_end
         `(popl cp)
         `(popl ap)
@@ -393,7 +393,7 @@
         `(popl t2)
         `(popl t3)
         (allocate
-          (lambda ()
+          (lambda (n)
             (instructions
               ; No more memory. This may causes segmentation fault.
               `(movl 0 ac)

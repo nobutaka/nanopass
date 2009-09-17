@@ -1,0 +1,18 @@
+This is a scheme compiler for my study.
+It runs on Linux x86 only.
+
+How to compile fib.
+
+in gauche
+> (load "./compiler.scm")
+> (x86 (cg-top (code-generation-form (immediate-literal-form (assignmentless-form (analyzed-form (cps-convert (core-form '(letrec ((fib (lambda (n) (if (= n 0) n (if (= n 1) n (+ (fib (- n 1)) (fib (- n 2)))))))) (fib 35))))))))))
+
+a.out will be created.
+
+References.
+
+[1] Summer Scheme Workshop; Compiling Scheme, http://www.cs.indiana.edu/eip/compile/
+[2] Ur-Scheme, http://www.canonical.org/~kragen/sw/urscheme/
+[3] An Incremental Approach to Compiler Construction, http://www.cs.indiana.edu/~aghuloum/
+[4] The 90 Minute Scheme to C compiler, http://www.iro.umontreal.ca/~boucherd/mslug/meetings/20041020/minutes-en.html
+[5] scheme -> LLVM, http://www.ida.liu.se/~tobnu/scheme2llvm/

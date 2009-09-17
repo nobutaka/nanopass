@@ -83,23 +83,23 @@ static char *gc_free;
 
 void gc_walk_roots(struct rootset *root)
 {
-    printf("gc_walk_roots\n");
+    /*printf("gc_walk_roots\n");*/
     if (root->usedregs != 0) {
         printf("not implemented\n"); exit(1);
     }
     /* registers */
-    printf("walk registers\n");
+    /*printf("walk registers\n");*/
     root->regs.sym.cp |= proc_tag;                  /* cp is untagged. tag it temporarily. */
     gc_copy_forward(&root->regs.sym.cp);
     root->regs.sym.cp = UNTAG(root->regs.sym.cp);
     /* stack */
     /* TODO: walk frames over the top frame */
-    printf("\nwalk stack\n");
+    /*printf("\nwalk stack\n");*/
     unsigned int *p = (unsigned int *)stack_ptr;
     p++; /* skip return code pointer */
     for (; p < (unsigned int *)root->stack_end; p++)
         gc_copy_forward(p);
-    printf("\nend gc_walk_roots\n");
+    /*printf("\nend gc_walk_roots\n");*/
 }
 
 // Cheney collector
@@ -110,10 +110,10 @@ void gc_copy_forward(unsigned int *cell)
     unsigned int *obj = points_to(cell);
     if (obj == 0) { return; }                               /* null pointer -> ignore */
     if (forwarded(cell)) {  /* update pointer with forwarding info */
-        printf("U%c", ((tag==proc_tag)? 'c':'v'));
+        /*printf("U%c", ((tag==proc_tag)? 'c':'v'));*/
         *cell = ((unsigned int)points_to(obj)) | tag;
     } else {                /* copy and forward object */
-        printf("C%c", ((tag==proc_tag)? 'c':'v'));
+        /*printf("C%c", ((tag==proc_tag)? 'c':'v'));*/
         unsigned int len = 1 + ((tag == proc_tag)? 1 : 0) + VECTORLENGTH(*cell);
         unsigned int size = align(len) * ws;
         memcpy(gc_free, obj, size);
@@ -195,13 +195,13 @@ static void print_info(struct rootset *root)
 
 void gc_collect(struct rootset *root)
 {
-    printf(";; gc_collect called\n");
+    /*printf(";; gc_collect called\n");
     print_info(root);
     check_ptr = gc_cur_space;
     check_end = (char *)root->regs.sym.ap;
     printf("first check\n");
     gc_checker(root);
-    memset(gc_to_space, 0, gc_space_size);
+    memset(gc_to_space, 0, gc_space_size);*/
     gc_scan = gc_free = gc_to_space;
     gc_walk_roots(root);
     while (gc_scan < gc_free) {
@@ -224,33 +224,17 @@ void gc_collect(struct rootset *root)
             break;
         }
     }
-    printf("\nswitch roles of gc spaces\n");
+    /*printf("\nswitch roles of gc spaces\n");*/
     char *temp = gc_to_space;
     gc_to_space = gc_cur_space;
     gc_cur_space = temp;
     root->regs.sym.ap = (unsigned int)gc_free;
     heap_end = gc_cur_space + gc_space_size;
-    print_info(root);
+    /*print_info(root);
     check_ptr = gc_cur_space;
     check_end = gc_free;
     printf("second check\n");
-    gc_checker(root);
-#if 0
-    int i;
-    char *new_heap_ptr = calloc(1, gc_space_size);
-    gc_cur_space = new_heap_ptr;
-
-    printf(";; gc_collect called\n");
-    printf("stack_ptr=%p\n", stack_ptr);
-    printf("stack_end=%p\n", root->stack_end);
-    for (i=0; i<6; i++) {
-        printf("regs[%d]=%#x\n", i, root->regs.ind[i]);
-    }
-    root->regs.sym.ap = (unsigned int)new_heap_ptr;
-    heap_end = new_heap_ptr + gc_space_size;
-    printf("gc_cur_space=%p\n", gc_cur_space);
-    printf("heap_end=%p\n", heap_end);
-#endif
+    gc_checker(root);*/
 }
 
 int main(int argc, char *argv[])

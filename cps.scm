@@ -1,7 +1,15 @@
 (use util.match)
 
-(define (cps-convert exp)
-  (define (cps exp cont-exp)
+(define cps-form
+  (lambda (exp)
+    `((lambda (call/cc)
+        ,(cps exp '(lambda (r) r)))
+      (lambda (k f)
+        (f k (lambda (dummy-k result)
+               (k result)))))))
+
+(define cps
+  (lambda (exp cont-exp)
     (if (not (pair? exp))
         `(,cont-exp ,exp)
         (match exp
@@ -36,21 +44,21 @@
                  (cps-list exp (lambda (args)
                                  (cons (car args)
                                        (cons cont-exp
-                                             (cdr args)))))))])))
-  (define (cps-list exp inner)
-    (define (body exp args)
-      (if (null? exp)
-          (inner (reverse args))
-          (cps (car exp)
-               (let ([r (new-var 'r)])
-                 `(lambda (,r)
-                    ,(body (cdr exp) (cons r args)))))))
-    (body exp '()))
-  `((lambda (call/cc)
-      ,(cps exp '(lambda (r) r)))
-    (lambda (k f)
-      (f k (lambda (dummy-k result)
-             (k result))))))
+                                             (cdr args)))))))]))))
 
-(define (new-var id)
-  (gensym (symbol->string id)))
+(define cps-list
+  (lambda (exp inner)
+    (cps-list-body exp inner '())))
+
+(define cps-list-body
+  (lambda (exp inner args)
+    (if (null? exp)
+        (inner (reverse args))
+        (cps (car exp)
+             (let ([r (new-var 'r)])
+               `(lambda (,r)
+                  ,(cps-list-body (cdr exp) inner (cons r args))))))))
+
+(define new-var
+  (lambda (id)
+    (gensym (symbol->string id))))

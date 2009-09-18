@@ -1,15 +1,17 @@
 (use srfi-1)
 (use util.match)
 
-(define (x86 program)
-  (x86-assemble program "t.s")
-  (printf "running gcc\n")
-  (sys-system "gcc -m32 startup.c call_scheme.s t.s -o a.out"))
+(define x86
+  (lambda (program)
+    (x86-assemble program "t.s")
+    (printf "running gcc\n")
+    (sys-system "gcc -m32 startup.c call_scheme.s t.s -o a.out")))
 
-(define (x86-assemble code file)
-  (with-output-to-file file
-    (lambda ()
-      (x86-spit (registerize code)))))
+(define x86-assemble
+  (lambda (code file)
+    (with-output-to-file file
+      (lambda ()
+        (x86-spit (registerize code))))))
 
 (define registerize
   (let ([regs '((sp . esp) (fp . ebp) (cp . esi) (ap . edi) (ac . eax) (t1 . ebx) (t2 . ecx) (t3 . edx))])
@@ -25,8 +27,28 @@
            `(reg ,(cdr x)))]
         [else thing]))))
 
-(define (x86-spit ls)
-  (define (print-elem obj)
+(define x86-spit
+  (lambda (ls)
+    (printf "\t.code32\n")
+    (printf "\t.align 4\n")
+    (printf "\t.global _scheme_entry\n")
+    (let loop ([ls (cdr ls)])
+      (unless (null? ls)
+        (let ([inst (car ls)])
+          (case (car inst)
+            [(comment)
+             (printf "\t\t# ~a " (cadr inst))]
+            [(label)
+             (printf "~a:" (cadr inst))]
+            [else
+             (let ([rands (insert-delimiter (cdr inst))])
+               (printf "\t~s\t" (car inst))
+               (for-each print-elem rands))]))
+        (newline)
+        (loop (cdr ls))))))
+
+(define print-elem
+  (lambda (obj)
     (cond
       [(pair? obj)
        (match obj
@@ -47,32 +69,18 @@
        (printf "\t# ~a " obj)]
       [(number? obj)
        (printf "$~a" obj)]
-      [else (printf "~a" obj)]))
-  (define (insert-delimiter rands)
+      [else (printf "~a" obj)])))
+
+(define insert-delimiter
+  (lambda (rands)
     (reverse
       (fold (lambda (exp ls)
               (if (string? exp)
                   (cons exp ls)
                   (cons exp (cons '(delim) ls))))
             (cons (car rands) '())
-            (cdr rands))))
-  (printf "\t.code32\n")
-  (printf "\t.align 4\n")
-  (printf "\t.global _scheme_entry\n")
-  (let loop ([ls (cdr ls)])
-    (unless (null? ls)
-      (let ([inst (car ls)])
-        (case (car inst)
-          [(comment)
-           (printf "\t\t# ~a " (cadr inst))]
-          [(label)
-           (printf "~a:" (cadr inst))]
-          [else
-           (let ([rands (insert-delimiter (cdr inst))])
-             (printf "\t~s\t" (car inst))
-             (for-each print-elem rands))]))
-      (newline)
-      (loop (cdr ls)))))
+            (cdr rands)))))
 
-(define (printf . x)
-  (apply format #t x))
+(define printf
+  (lambda x
+    (apply format #t x)))

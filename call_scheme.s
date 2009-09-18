@@ -10,7 +10,7 @@ heap_end:
     .align 4
     .global call_scheme
 call_scheme:
-    movl %esp, %eax
+    movl %esp, %eax     # pointer to argument
     pushl %ebx
     pushl %esi
     pushl %edi
@@ -18,7 +18,7 @@ call_scheme:
     movl $0, %esi       # set cp to 0
     movl 8(%eax), %edi  # heap
     movl 4(%eax), %ebp  # stack
-    movl $return_from_scheme, (%ebp)
+    movl $return_from_scheme, (%ebp)    # set fp to return address
     jmp _scheme_entry
 
     .align 4

@@ -40,11 +40,11 @@ unsigned int *points_to(unsigned int *x) { return (unsigned int *)UNTAG(*x); }
 void set_forward(unsigned int *x, unsigned int *to) { *points_to(x) = ((unsigned int)to) | 0x1; }
 int forwarded(unsigned int *x) { return (*points_to(x) & 0x1); }
 
-int align(int n) { return (n%2==0)?n:n+1; }
+unsigned int align(unsigned int n) { return (n+1) & ~1; } /* 2n alignment */
 
 struct rootset {
     unsigned int usedregs;
-    char *stack_end;
+    char *stack_top;
     union {
         unsigned int ind[6];
         struct {
@@ -58,10 +58,9 @@ struct rootset {
     } regs;
 };
 
-static char *stack_ptr;
+static char *stack_bottom;
 
 static unsigned int gc_space_size;
-static char *heap_ptr;
 extern char *heap_end;
 static char *gc_cur_space;
 static char *gc_to_space;
@@ -69,9 +68,9 @@ static char *gc_to_space;
 void gc_initialize(unsigned int heap_size)
 {
     gc_space_size = heap_size;
-    gc_cur_space = heap_ptr = calloc(1, gc_space_size);
+    gc_cur_space = calloc(1, gc_space_size);
     gc_to_space = calloc(1, gc_space_size);
-    heap_end = heap_ptr + gc_space_size;
+    heap_end = gc_cur_space + gc_space_size;
 
     if (TAG((unsigned int)gc_cur_space) != 0 || TAG((unsigned int)gc_to_space) != 0) {
         printf("memory not aligned\n"); exit(1);
@@ -95,9 +94,9 @@ void gc_walk_roots(struct rootset *root)
     /* stack */
     /* TODO: walk frames over the top frame */
     /*printf("\nwalk stack\n");*/
-    unsigned int *p = (unsigned int *)stack_ptr;
+    unsigned int *p = (unsigned int *)stack_bottom;
     p++; /* skip return code pointer */
-    for (; p < (unsigned int *)root->stack_end; p++)
+    for (; p < (unsigned int *)root->stack_top; p++)
         gc_copy_forward(p);
     /*printf("\nend gc_walk_roots\n");*/
 }
@@ -117,13 +116,13 @@ void gc_copy_forward(unsigned int *cell)
         unsigned int len = 1 + ((tag == proc_tag)? 1 : 0) + VECTORLENGTH(*cell);
         unsigned int size = align(len) * ws;
         memcpy(gc_free, obj, size);
-        set_forward(cell, (unsigned int*)gc_free);
+        set_forward(cell, (unsigned int *)gc_free);
         *cell = ((unsigned int)gc_free) | tag;
         gc_free += size;
     }
 }
 
-static char *check_ptr;
+static char *check_begin;
 static char *check_end;
 
 static void check(unsigned int x)
@@ -134,13 +133,14 @@ static void check(unsigned int x)
     case proc_tag:
         {
             char *obj = (char *)UNTAG(x);
-            if (!(obj >= check_ptr && obj < check_end))
+            if (!(obj >= check_begin && obj < check_end))
                 printf("out of range\n");
             break;
         }
     }
 }
 
+// duplicated
 static void gc_checker(struct rootset *root)
 {
     printf("gc_checker\n");
@@ -149,13 +149,13 @@ static void gc_checker(struct rootset *root)
     check(root->regs.sym.cp | proc_tag);
     /* stack */
     printf("stack\n");
-    unsigned int *p = (unsigned int *)stack_ptr;
+    unsigned int *p = (unsigned int *)stack_bottom;
     p++; /* skip return code pointer */
-    for (; p < (unsigned int *)root->stack_end; p++)
+    for (; p < (unsigned int *)root->stack_top; p++)
         check(*p);
     /* heap */
     printf("heap\n");
-    char *scan = check_ptr;
+    char *scan = check_begin;
     while (scan < check_end) {
         unsigned int *obj = (unsigned int *)scan;
         unsigned int tag = TAG(*obj >> 1);
@@ -186,8 +186,8 @@ static void print_info(struct rootset *root)
     for (i=0; i<6; i++) {
         printf("regs[%d]=%#x\n", i, root->regs.ind[i]);
     }
-    printf("stack_ptr=%p\n", stack_ptr);
-    printf("stack_end=%p\n", root->stack_end);
+    printf("stack_bottom=%p\n", stack_bottom);
+    printf("stack_top=%p\n", root->stack_top);
     printf("gc_cur_space=%p\n", gc_cur_space);
     printf("ap=%#x\n", root->regs.sym.ap);
     printf("heap_end=%p\n", heap_end);
@@ -197,7 +197,7 @@ void gc_collect(struct rootset *root)
 {
     /*printf(";; gc_collect called\n");
     print_info(root);
-    check_ptr = gc_cur_space;
+    check_begin = gc_cur_space;
     check_end = (char *)root->regs.sym.ap;
     printf("first check\n");
     gc_checker(root);
@@ -231,7 +231,7 @@ void gc_collect(struct rootset *root)
     root->regs.sym.ap = (unsigned int)gc_free;
     heap_end = gc_cur_space + gc_space_size;
     /*print_info(root);
-    check_ptr = gc_cur_space;
+    check_begin = gc_cur_space;
     check_end = gc_free;
     printf("second check\n");
     gc_checker(root);*/
@@ -240,10 +240,10 @@ void gc_collect(struct rootset *root)
 int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL); /* for debug */
-    stack_ptr = calloc(1, default_stack_size);
+    stack_bottom = calloc(1, default_stack_size);
     gc_initialize(default_heap_size);
 
-    print(call_scheme((PTR)stack_ptr,(PTR)gc_cur_space));
+    print(call_scheme((PTR)stack_bottom,(PTR)gc_cur_space));
 
     printf("\n");
     return 0;
@@ -253,16 +253,13 @@ print(PTR x)
 {
     switch (TAG(x)) {
     case number_tag:
-        printf("%ld", x/(mask+1));
-        break;
+        printf("%ld", x/(mask+1)); break;
     case immed_tag:
         switch (IMMTAG(x)) {
         case bool_tag:
-            printf((x>>imm_tag_len) ? "#t" : "#f");
-            break;
+            printf((x>>imm_tag_len) ? "#t" : "#f"); break;
         case null_tag:
-            printf("()");
-            break;
+            printf("()"); break;
         }
         break;
     case vector_tag:

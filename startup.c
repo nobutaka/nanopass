@@ -101,7 +101,7 @@ void gc_walk_roots(struct rootset *root)
     /*printf("\nend gc_walk_roots\n");*/
 }
 
-// Cheney collector
+/* Cheney collector */
 void gc_copy_forward(unsigned int *cell)
 {
     unsigned int tag = TAG(*cell);
@@ -140,7 +140,7 @@ static void check(unsigned int x)
     }
 }
 
-// duplicated
+/* duplicated */
 static void gc_checker(struct rootset *root)
 {
     printf("gc_checker\n");

@@ -21,7 +21,7 @@
     (if (not (pair? exp))
         (cond
           [(symbol? exp) exp]
-          [(or (number? exp) (boolean? exp))
+          [(or (number? exp) (boolean? exp) (char? exp))
            `(quote ,exp)]
           [else
            (error "Bad expression" exp)])
@@ -89,7 +89,7 @@
                   (analyze exp '())])
       `(let ,quotes ,exp))))
 
-(define analyze
+(define analyze  ;; returns: exp, quote-pairs, assigned, free
   (lambda (exp env)
     (if (not (pair? exp))
         (if (memq exp env)
@@ -100,7 +100,7 @@
                 (errorf "Unbound variable ~s" exp)))
         (match exp
           [('quote obj)
-           (if (or (number? obj) (null? obj) (boolean? obj))
+           (if (or (number? obj) (null? obj) (boolean? obj) (char? obj))
                (values `(quote ,obj) '() '() '())
                (let ([var (gen-qsym)])
                  (values var (list (list var exp)) '() (unit-set var))))]
@@ -245,7 +245,7 @@
 (define heap-literal-destruct
   (lambda (obj)
     (cond
-      [(or (boolean? obj) (number? obj) (null? obj))
+      [(or (boolean? obj) (number? obj) (char? obj) (null? obj))
        `(quote ,obj)]
       [(pair? obj)
        (let ([car-exp (heap-literal-destruct (car obj))]

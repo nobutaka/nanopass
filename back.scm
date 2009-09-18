@@ -7,6 +7,7 @@
 
 (define bool-tag #b00000001)
 (define null-tag #b00001001)
+(define char-tag #b00010001)
 
 (define imm-mask #b11111111)
 
@@ -25,6 +26,9 @@
         [(boolean? obj)
          (+ (* (if obj 1 0) (+ imm-mask 1)) bool-tag)]
         [(null? obj) null-tag]
+        [(char? obj)
+         (let ([val (char->integer obj)])
+           (+ (* val (+ imm-mask 1)) char-tag))]
         [else
          (error "~s not encodable" obj)]))))
 

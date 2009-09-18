@@ -15,6 +15,7 @@ typedef long PTR;
 
 #define bool_tag    0x01
 #define null_tag    0x09
+#define char_tag    0x11
 
 #define imm_tag_len 8
 
@@ -260,6 +261,18 @@ print(PTR x)
             printf((x>>imm_tag_len) ? "#t" : "#f"); break;
         case null_tag:
             printf("()"); break;
+        case char_tag:
+            switch (x>>imm_tag_len) {
+            case '\n':
+                printf("#\\newline"); break;
+            case ' ':
+                printf("#\\space"); break;
+            case 9:
+                printf("#\\tab"); break;
+            default:
+                printf("#\\%c", x>>imm_tag_len); break;
+            }
+            break;
         }
         break;
     case vector_tag:

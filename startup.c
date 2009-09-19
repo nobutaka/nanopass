@@ -6,6 +6,7 @@ typedef long PTR;
 
 #define number_tag  0
 #define immed_tag   1
+#define string_tag  3
 #define vector_tag  5
 #define proc_tag    6
 
@@ -27,11 +28,15 @@ typedef long PTR;
 #define UNTAG(x) ((x) & (~mask))
 #define IMMTAG(x) ((x) & imm_mask)
 
-#define VECTORLENGTH(x) (*((PTR *)UNTAG(x)) >> (tag_len+1))
+#define LENGTH(x) (*((PTR *)UNTAG(x)) >> (tag_len+1))
+#define STRINGDATA(x) ((char *)UNTAG(x) + sizeof(PTR))
 #define VECTORDATA(x) ((PTR *)UNTAG(x) + 1)
 
 #define default_heap_size (4*10000)
 #define default_stack_size (4*10000)
+
+/*#define LOG(...) (printf(__VA_ARGS__))*/
+#define LOG(...)
 
 extern PTR call_scheme();
 static void gc_copy_forward(unsigned int *cell);
@@ -83,23 +88,46 @@ static char *gc_free;
 
 void gc_walk_roots(struct rootset *root)
 {
-    /*printf("gc_walk_roots\n");*/
+    LOG("gc_walk_roots\n");
     if (root->usedregs != 0) {
         printf("not implemented\n"); exit(1);
     }
     /* registers */
-    /*printf("walk registers\n");*/
+    LOG("walk registers\n");
     root->regs.sym.cp |= proc_tag;                  /* cp is untagged. tag it temporarily. */
     gc_copy_forward(&root->regs.sym.cp);
     root->regs.sym.cp = UNTAG(root->regs.sym.cp);
     /* stack */
     /* TODO: walk frames over the top frame */
-    /*printf("\nwalk stack\n");*/
+    LOG("\nwalk stack\n");
     unsigned int *p = (unsigned int *)stack_bottom;
     p++; /* skip return code pointer */
     for (; p < (unsigned int *)root->stack_top; p++)
         gc_copy_forward(p);
-    /*printf("\nend gc_walk_roots\n");*/
+    LOG("\nend gc_walk_roots\n");
+}
+
+static char tag_to_char(unsigned int tag)
+{
+    if (tag == string_tag) return 's';
+    if (tag == vector_tag) return 'v';
+    if (tag == proc_tag) return 'p';
+    return 'i';
+}
+
+static unsigned int object_size(unsigned int *obj)
+{
+    unsigned int tag = TAG(*obj >> 1);
+    unsigned int len = *obj >> (tag_len+1);
+    unsigned int full_len = 1;
+    if (tag == string_tag) {
+        full_len += ((len+3)/4);
+    } else if (tag == vector_tag) {
+        full_len += len;
+    } else if (tag == proc_tag) {
+        full_len += 1+len;
+    }
+    return align(full_len) * ws;
 }
 
 /* Cheney collector */
@@ -110,12 +138,11 @@ void gc_copy_forward(unsigned int *cell)
     unsigned int *obj = points_to(cell);
     if (obj == 0) { return; }                               /* null pointer -> ignore */
     if (forwarded(cell)) {  /* update pointer with forwarding info */
-        /*printf("U%c", ((tag==proc_tag)? 'c':'v'));*/
+        LOG("U%c", tag_to_char(tag));
         *cell = ((unsigned int)points_to(obj)) | tag;
     } else {                /* copy and forward object */
-        /*printf("C%c", ((tag==proc_tag)? 'c':'v'));*/
-        unsigned int len = 1 + ((tag == proc_tag)? 1 : 0) + VECTORLENGTH(*cell);
-        unsigned int size = align(len) * ws;
+        LOG("C%c", tag_to_char(tag));
+        unsigned int size = object_size(obj);
         memcpy(gc_free, obj, size);
         set_forward(cell, (unsigned int *)gc_free);
         *cell = ((unsigned int)gc_free) | tag;
@@ -130,6 +157,7 @@ static void check(unsigned int x)
 {
     printf("%#x\n", x);
     switch (TAG(x)) {
+    case string_tag:
     case vector_tag:
     case proc_tag:
         {
@@ -165,12 +193,16 @@ static void gc_checker(struct rootset *root)
         case immed_tag:
             printf("scan incorrect, unboxed type. val=%#x, obj=%p, scan=%p, check_end=%p\n", *obj, obj, scan, check_end); *((unsigned int *)0) = 0;
             break;
+        case string_tag:
+            printf("string, len=%d\n", (*obj >> (tag_len+1)));
+            scan += object_size(obj);
+            break;
         case vector_tag:
         case proc_tag:
             {
                 unsigned int i, size = *obj >> (tag_len+1);
                 unsigned int offset = 1 + ((tag == proc_tag)? 1 : 0);
-                printf("%s, size=%d\n", ((tag == proc_tag)? "proc" : "vector"), size);
+                printf("%c, size=%d\n", tag_to_char(tag), size);
                 for (i=0; i<size; i++)
                     check(obj[i+offset]);
                 scan += align(size + offset) * ws;
@@ -196,11 +228,11 @@ static void print_info(struct rootset *root)
 
 void gc_collect(struct rootset *root)
 {
-    /*printf(";; gc_collect called\n");
-    print_info(root);
+    LOG(";; gc_collect called\n");
+    /*print_info(root);
     check_begin = gc_cur_space;
     check_end = (char *)root->regs.sym.ap;
-    printf("first check\n");
+    LOG("first check\n");
     gc_checker(root);
     memset(gc_to_space, 0, gc_space_size);*/
     gc_scan = gc_free = gc_to_space;
@@ -212,6 +244,9 @@ void gc_collect(struct rootset *root)
         case number_tag:
         case immed_tag:
             printf("scan incorrect, unboxed type.\n"); *((unsigned int *)0) = 0;
+            break;
+        case string_tag:
+            gc_scan += object_size(obj);
             break;
         case vector_tag:
         case proc_tag:
@@ -225,7 +260,7 @@ void gc_collect(struct rootset *root)
             break;
         }
     }
-    /*printf("\nswitch roles of gc spaces\n");*/
+    LOG("\nswitch roles of gc spaces\n");
     char *temp = gc_to_space;
     gc_to_space = gc_cur_space;
     gc_cur_space = temp;
@@ -234,13 +269,13 @@ void gc_collect(struct rootset *root)
     /*print_info(root);
     check_begin = gc_cur_space;
     check_end = gc_free;
-    printf("second check\n");
+    LOG("second check\n");
     gc_checker(root);*/
 }
 
 int main(int argc, char *argv[])
 {
-    setbuf(stdout, NULL); /* for debug */
+    /*setbuf(stdout, NULL);*/ /* for debug */
     stack_bottom = calloc(1, default_stack_size);
     gc_initialize(default_heap_size);
 
@@ -275,12 +310,26 @@ print(PTR x)
             break;
         }
         break;
+    case string_tag:
+        {
+            int n;
+            char *s;
+            n = LENGTH(x);
+            s = STRINGDATA(x);
+            printf("\"");
+            while (n--) {
+                if (*s == '"' || *s == '\\') printf("\\");
+                printf("%c", *s++);
+            }
+            printf("\"");
+            break;
+        }
     case vector_tag:
         {
             int n;
             PTR *p;
             printf("#(");
-            n = VECTORLENGTH(x);
+            n = LENGTH(x);
             p = VECTORDATA(x);
             if (n != 0) {
                 print(*p);

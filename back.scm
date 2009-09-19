@@ -1,3 +1,4 @@
+(define string-tag  #b011)
 (define closure-tag #b110)
 (define vector-tag  #b101)
 
@@ -292,6 +293,23 @@
       [(= eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
          `(cmpl t1 t2))]
+      [(string)
+       (cg-true-inline cg-rands rands fs dd cd nextlab
+         (instructions
+           `(comment "string")
+           (cg-allocate (+ (quotient (+ (length rands) (- ws 1)) ws) 1) 'ac (+ fs (* (length rands) ws)) '())
+           `(movl ,(header (length rands) string-tag) t1)
+           `(movl t1 (ac 0))
+           (let loop ([fpos fs] [spos ws] [num (length rands)])
+             (if (zero? num)
+                 (instructions)
+                 (instructions
+                   `(movl (fp ,fpos) t1)
+                   `(shr 8 t1)          ; 8 bits for the char tag
+                   `(movb t1l (ac ,spos))
+                   (loop (+ fpos ws) (+ spos 1) (- num 1)))))
+           (cg-type-tag string-tag 'ac)
+           `(comment "end string")))]
       [(vector)
        (cg-true-inline cg-rands rands fs dd cd nextlab
          (instructions

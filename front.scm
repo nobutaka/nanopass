@@ -6,6 +6,7 @@
 
 (define *prim-names*
   '(+ - = eq?
+     string
      vector vector-ref
      vector-set! gc))
 
@@ -21,7 +22,7 @@
     (if (not (pair? exp))
         (cond
           [(symbol? exp) exp]
-          [(or (number? exp) (boolean? exp) (char? exp))
+          [(or (number? exp) (boolean? exp) (string? exp) (char? exp))
            `(quote ,exp)]
           [else
            (error "Bad expression" exp)])
@@ -247,6 +248,9 @@
     (cond
       [(or (boolean? obj) (number? obj) (char? obj) (null? obj))
        `(quote ,obj)]
+      [(string? obj)
+       (let ([char-exps (map (lambda (c) `(quote ,c)) (string->list obj))])
+         `(string . ,char-exps))]
       [(pair? obj)
        (let ([car-exp (heap-literal-destruct (car obj))]
              [cdr-exp (heap-literal-destruct (cdr obj))])

@@ -1,8 +1,27 @@
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
-typedef long PTR;
+typedef long Ptr;
+
+struct RootSet {
+    unsigned int usedregs;
+    char *stack_top;
+    union {
+        Ptr ind[6];
+        struct {
+            Ptr cp;
+            char *ap;
+            Ptr ac;
+            Ptr t1;
+            Ptr t2;
+            Ptr t3;
+        } sym;
+    } regs;
+};
+
+#define ws          4
 
 #define number_tag  0
 #define immed_tag   1
@@ -11,7 +30,6 @@ typedef long PTR;
 #define proc_tag    6
 
 #define mask        7
-
 #define tag_len     3
 
 #define bool_tag    0x01
@@ -19,93 +37,52 @@ typedef long PTR;
 #define char_tag    0x11
 
 #define imm_tag_len 8
-
 #define imm_mask    0xFF
 
-#define ws          4
+#define attr_len    (tag_len + 1)
 
-#define TAG(x) ((x) & mask)
-#define UNTAG(x) ((x) & (~mask))
-#define IMMTAG(x) ((x) & imm_mask)
+#define default_heap_size   (4*10000)
+#define default_stack_size  (4*10000)
 
-#define LENGTH(x) (*((PTR *)UNTAG(x)) >> (tag_len+1))
-#define STRINGDATA(x) ((char *)UNTAG(x) + sizeof(PTR))
-#define VECTORDATA(x) ((PTR *)UNTAG(x) + 1)
+#define PTR(ptr)    ((Ptr)(ptr))
+#define TAG(ptr)    (PTR(ptr) & mask)
+#define UNTAG(ptr)  (PTR(ptr) & (~mask))
+#define IMMTAG(ptr) (PTR(ptr) & imm_mask)
 
-#define default_heap_size (4*10000)
-#define default_stack_size (4*10000)
+#define OBJ(ptr)        ((Ptr *)UNTAG(ptr))
+#define OBJLENGTH(ptr)  (*OBJ(ptr) >> attr_len)
+#define OBJTAG(ptr)     TAG(*OBJ(ptr) >> 1)
+#define STRINGDATA(ptr) ((char *)(OBJ(ptr) + 1))
+#define VECTORDATA(ptr) (OBJ(ptr) + 1)
 
-/*#define LOG(...) (printf(__VA_ARGS__))*/
-#define LOG(...)
+/*#define VERBOSE*/
 
-extern PTR call_scheme();
-static void gc_copy_forward(unsigned int *cell);
+#ifdef VERBOSE
+# define LOG(...) printf(__VA_ARGS__)
+#else
+# define LOG(...)
+#endif
 
-unsigned int *points_to(unsigned int *x) { return (unsigned int *)UNTAG(*x); }
-
-void set_forward(unsigned int *x, unsigned int *to) { *points_to(x) = ((unsigned int)to) | 0x1; }
-int forwarded(unsigned int *x) { return (*points_to(x) & 0x1); }
-
-unsigned int align(unsigned int n) { return (n+1) & ~1; } /* 2n alignment */
-
-struct rootset {
-    unsigned int usedregs;
-    char *stack_top;
-    union {
-        unsigned int ind[6];
-        struct {
-            unsigned int cp;
-            unsigned int ap;
-            unsigned int ac;
-            unsigned int t1;
-            unsigned int t2;
-            unsigned int t3;
-        } sym;
-    } regs;
-};
+extern Ptr call_scheme(char *, char *);
+extern char *heap_end;
 
 static char *stack_bottom;
-
 static unsigned int gc_space_size;
-extern char *heap_end;
 static char *gc_cur_space;
 static char *gc_to_space;
-
-void gc_initialize(unsigned int heap_size)
-{
-    gc_space_size = heap_size;
-    gc_cur_space = calloc(1, gc_space_size);
-    gc_to_space = calloc(1, gc_space_size);
-    heap_end = gc_cur_space + gc_space_size;
-
-    if (TAG((unsigned int)gc_cur_space) != 0 || TAG((unsigned int)gc_to_space) != 0) {
-        printf("memory not aligned\n"); exit(1);
-    }
-}
-
 static char *gc_scan;
 static char *gc_free;
 
-void gc_walk_roots(struct rootset *root)
+static void error_exit(const char *fmt, ...)
 {
-    LOG("gc_walk_roots\n");
-    if (root->usedregs != 0) {
-        printf("not implemented\n"); exit(1);
-    }
-    /* registers */
-    LOG("walk registers\n");
-    root->regs.sym.cp |= proc_tag;                  /* cp is untagged. tag it temporarily. */
-    gc_copy_forward(&root->regs.sym.cp);
-    root->regs.sym.cp = UNTAG(root->regs.sym.cp);
-    /* stack */
-    /* TODO: walk frames over the top frame */
-    LOG("\nwalk stack\n");
-    unsigned int *p = (unsigned int *)stack_bottom;
-    p++; /* skip return code pointer */
-    for (; p < (unsigned int *)root->stack_top; p++)
-        gc_copy_forward(p);
-    LOG("\nend gc_walk_roots\n");
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    error(1);
 }
+
+static unsigned int align(unsigned int n) { return (n+1) & ~1; } /* 2n alignment */
 
 static char tag_to_char(unsigned int tag)
 {
@@ -115,13 +92,13 @@ static char tag_to_char(unsigned int tag)
     return 'i';
 }
 
-static unsigned int object_size(unsigned int *obj)
+static unsigned int object_size(Ptr *obj)
 {
-    unsigned int tag = TAG(*obj >> 1);
-    unsigned int len = *obj >> (tag_len+1);
+    unsigned int tag = OBJTAG(obj);
+    unsigned int len = OBJLENGTH(obj);
     unsigned int full_len = 1;
     if (tag == string_tag) {
-        full_len += ((len+3)/4);
+        full_len += ((len+3) / 4);
     } else if (tag == vector_tag) {
         full_len += len;
     } else if (tag == proc_tag) {
@@ -130,120 +107,80 @@ static unsigned int object_size(unsigned int *obj)
     return align(full_len) * ws;
 }
 
-/* Cheney collector */
-void gc_copy_forward(unsigned int *cell)
+static unsigned int content_offset(Ptr *obj)
 {
-    unsigned int tag = TAG(*cell);
+    unsigned int tag = OBJTAG(obj);
+    unsigned int offset = 1;
+    if (tag == proc_tag) offset++;
+    return offset;
+}
+
+static void gc_initialize(unsigned int heap_size)
+{
+    gc_space_size = heap_size;
+    gc_cur_space = calloc(1, gc_space_size);
+    gc_to_space = calloc(1, gc_space_size);
+    heap_end = gc_cur_space + gc_space_size;
+
+    if (TAG(gc_cur_space) != 0 || TAG(gc_to_space) != 0) {
+        error_exit("memory not aligned\n");
+    }
+}
+
+static void set_forward(Ptr *obj, Ptr to) { *obj = to | 0x1; }
+static int forwarded(Ptr *obj) { return *obj & 0x1; }
+
+/* Cheney collector */
+static void gc_copy_forward(Ptr *p)
+{
+    unsigned int tag = TAG(*p);
     if (tag == number_tag || tag == immed_tag) { return; }  /* number & immediate -> ignore */
-    unsigned int *obj = points_to(cell);
+    Ptr *obj = OBJ(*p);
     if (obj == 0) { return; }                               /* null pointer -> ignore */
-    if (forwarded(cell)) {  /* update pointer with forwarding info */
+    if (forwarded(obj)) {   /* update pointer with forwarding info */
         LOG("U%c", tag_to_char(tag));
-        *cell = ((unsigned int)points_to(obj)) | tag;
+        *p = UNTAG(*obj) | tag;
     } else {                /* copy and forward object */
         LOG("C%c", tag_to_char(tag));
         unsigned int size = object_size(obj);
         memcpy(gc_free, obj, size);
-        set_forward(cell, (unsigned int *)gc_free);
-        *cell = ((unsigned int)gc_free) | tag;
+        set_forward(obj, PTR(gc_free));
+        *p = PTR(gc_free) | tag;
         gc_free += size;
     }
 }
 
-static char *check_begin;
-static char *check_end;
-
-static void check(unsigned int x)
+static void gc_walk_roots(struct RootSet *root)
 {
-    printf("%#x\n", x);
-    switch (TAG(x)) {
-    case string_tag:
-    case vector_tag:
-    case proc_tag:
-        {
-            char *obj = (char *)UNTAG(x);
-            if (!(obj >= check_begin && obj < check_end))
-                printf("out of range\n");
-            break;
-        }
+    LOG("gc_walk_roots\n");
+    if (root->usedregs != 0) {
+        error_exit("not implemented\n");
     }
+    LOG("walk registers\n");
+    root->regs.sym.cp |= proc_tag;                  /* cp is untagged. tag it temporarily. */
+    gc_copy_forward(&root->regs.sym.cp); LOG("\n");
+    root->regs.sym.cp = UNTAG(root->regs.sym.cp);
+    LOG("walk stack\n");                            /* walk only one frame now */
+    Ptr *p = (Ptr *)stack_bottom;
+    p++;                                            /* skip return code pointer */
+    for (; p < (Ptr *)root->stack_top; p++)
+        gc_copy_forward(p);
+    LOG("\n");
+    LOG("end gc_walk_roots\n");
 }
 
-/* duplicated */
-static void gc_checker(struct rootset *root)
-{
-    printf("gc_checker\n");
-    /* registers */
-    printf("registers\n");
-    check(root->regs.sym.cp | proc_tag);
-    /* stack */
-    printf("stack\n");
-    unsigned int *p = (unsigned int *)stack_bottom;
-    p++; /* skip return code pointer */
-    for (; p < (unsigned int *)root->stack_top; p++)
-        check(*p);
-    /* heap */
-    printf("heap\n");
-    char *scan = check_begin;
-    while (scan < check_end) {
-        unsigned int *obj = (unsigned int *)scan;
-        unsigned int tag = TAG(*obj >> 1);
-        switch (tag) {
-        case number_tag:
-        case immed_tag:
-            printf("scan incorrect, unboxed type. val=%#x, obj=%p, scan=%p, check_end=%p\n", *obj, obj, scan, check_end); *((unsigned int *)0) = 0;
-            break;
-        case string_tag:
-            printf("string, len=%d\n", (*obj >> (tag_len+1)));
-            scan += object_size(obj);
-            break;
-        case vector_tag:
-        case proc_tag:
-            {
-                unsigned int i, size = *obj >> (tag_len+1);
-                unsigned int offset = 1 + ((tag == proc_tag)? 1 : 0);
-                printf("%c, size=%d\n", tag_to_char(tag), size);
-                for (i=0; i<size; i++)
-                    check(obj[i+offset]);
-                scan += align(size + offset) * ws;
-            }
-            break;
-        }
-    }
-    printf("end gc_checker\n");
-}
-
-static void print_info(struct rootset *root)
-{
-    int i;
-    for (i=0; i<6; i++) {
-        printf("regs[%d]=%#x\n", i, root->regs.ind[i]);
-    }
-    printf("stack_bottom=%p\n", stack_bottom);
-    printf("stack_top=%p\n", root->stack_top);
-    printf("gc_cur_space=%p\n", gc_cur_space);
-    printf("ap=%#x\n", root->regs.sym.ap);
-    printf("heap_end=%p\n", heap_end);
-}
-
-void gc_collect(struct rootset *root)
+void gc_collect(struct RootSet *root)
 {
     LOG(";; gc_collect called\n");
-    /*print_info(root);
-    check_begin = gc_cur_space;
-    check_end = (char *)root->regs.sym.ap;
-    LOG("first check\n");
-    gc_checker(root);
-    memset(gc_to_space, 0, gc_space_size);*/
+    /*memset(gc_to_space, 0, gc_space_size);*/
     gc_scan = gc_free = gc_to_space;
     gc_walk_roots(root);
     while (gc_scan < gc_free) {
-        unsigned int *obj = (unsigned int *)gc_scan;
-        unsigned int tag = TAG(*obj >> 1);
-        switch (tag) {
+        Ptr *obj = OBJ(gc_scan);
+        switch (OBJTAG(obj)) {
         case number_tag:
         case immed_tag:
-            printf("scan incorrect, unboxed type.\n"); *((unsigned int *)0) = 0;
+            error_exit("scan incorrect, unboxed type.\n");
             break;
         case string_tag:
             gc_scan += object_size(obj);
@@ -251,53 +188,37 @@ void gc_collect(struct rootset *root)
         case vector_tag:
         case proc_tag:
             {
-                unsigned int i, size = *obj >> (tag_len+1);
-                unsigned int offset = 1 + ((tag == proc_tag)? 1 : 0);
-                for (i=0; i<size; i++)
+                unsigned int i, len = OBJLENGTH(obj);
+                unsigned int offset = content_offset(obj);
+                for (i=0; i<len; i++)
                     gc_copy_forward(&obj[i+offset]);
-                gc_scan += align(size + offset) * ws;
+                LOG("\n");
+                gc_scan += align(offset + len) * ws;
+                break;
             }
-            break;
         }
     }
-    LOG("\nswitch roles of gc spaces\n");
+    LOG("switch roles of gc spaces\n");
     char *temp = gc_to_space;
     gc_to_space = gc_cur_space;
     gc_cur_space = temp;
-    root->regs.sym.ap = (unsigned int)gc_free;
+    root->regs.sym.ap = gc_free;
     heap_end = gc_cur_space + gc_space_size;
-    /*print_info(root);
-    check_begin = gc_cur_space;
-    check_end = gc_free;
-    LOG("second check\n");
-    gc_checker(root);*/
 }
 
-int main(int argc, char *argv[])
+void print(Ptr ptr)
 {
-    /*setbuf(stdout, NULL);*/ /* for debug */
-    stack_bottom = calloc(1, default_stack_size);
-    gc_initialize(default_heap_size);
-
-    print(call_scheme((PTR)stack_bottom,(PTR)gc_cur_space));
-
-    printf("\n");
-    return 0;
-}
-
-print(PTR x)
-{
-    switch (TAG(x)) {
+    switch (TAG(ptr)) {
     case number_tag:
-        printf("%ld", x/(mask+1)); break;
+        printf("%ld", ptr/(mask+1)); break;
     case immed_tag:
-        switch (IMMTAG(x)) {
+        switch (IMMTAG(ptr)) {
         case bool_tag:
-            printf((x>>imm_tag_len) ? "#t" : "#f"); break;
+            printf((ptr>>imm_tag_len) ? "#t" : "#f"); break;
         case null_tag:
             printf("()"); break;
         case char_tag:
-            switch (x>>imm_tag_len) {
+            switch (ptr>>imm_tag_len) {
             case '\n':
                 printf("#\\newline"); break;
             case ' ':
@@ -305,7 +226,7 @@ print(PTR x)
             case 9:
                 printf("#\\tab"); break;
             default:
-                printf("#\\%c", x>>imm_tag_len); break;
+                printf("#\\%c", (char)(ptr>>imm_tag_len)); break;
             }
             break;
         }
@@ -314,8 +235,8 @@ print(PTR x)
         {
             int n;
             char *s;
-            n = LENGTH(x);
-            s = STRINGDATA(x);
+            n = OBJLENGTH(ptr);
+            s = STRINGDATA(ptr);
             printf("\"");
             while (n--) {
                 if (*s == '"' || *s == '\\') printf("\\");
@@ -327,10 +248,10 @@ print(PTR x)
     case vector_tag:
         {
             int n;
-            PTR *p;
+            Ptr *p;
             printf("#(");
-            n = LENGTH(x);
-            p = VECTORDATA(x);
+            n = OBJLENGTH(ptr);
+            p = VECTORDATA(ptr);
             if (n != 0) {
                 print(*p);
                 while (--n) {
@@ -342,10 +263,21 @@ print(PTR x)
             break;
         }
     case proc_tag:
-        printf("<procedure>", x);
+        printf("<procedure>", ptr);
         break;
     default:
-        printf("#<garbage %x>", (unsigned int)x);
+        printf("#<garbage %x>", (unsigned int)ptr);
         break;
     }
+}
+
+int main(int argc, char *argv[])
+{
+    stack_bottom = calloc(1, default_stack_size);
+    gc_initialize(default_heap_size);
+
+    print(call_scheme(stack_bottom, gc_cur_space));
+
+    printf("\n");
+    return 0;
 }

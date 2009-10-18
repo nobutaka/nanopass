@@ -4,8 +4,8 @@
 (define x86
   (lambda (program)
     (x86-assemble program "t.s")
-    (printf "running gcc\n")
-    (sys-system "gcc -m32 startup.c call_scheme.s t.s -o a.out")))
+    (unless (zero? (sys-system "gcc -m32 startup.c call_scheme.s t.s -o a.out"))
+      (error "could not build target"))))
 
 (define x86-assemble
   (lambda (code file)

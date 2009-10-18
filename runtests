@@ -1,0 +1,5 @@
+#!/usr/bin/env gosh
+(load "./compiler.scm")
+(load "./tests-driver.scm")
+(load "./tests-1.1-req.scm")
+(test-all)

@@ -23,7 +23,7 @@
            [(and (<= 0 obj) (< obj numtop)) (* obj (+ mask 1))]
            [(and (<= (- numtop) obj) (< obj 0)) (* (+ numtop obj) (+ mask 1))]
            [else
-            (error "~s is out of range" obj)])]
+            (errorf "~s is out of range" obj)])]
         [(boolean? obj)
          (+ (* (if obj 1 0) (+ imm-mask 1)) bool-tag)]
         [(null? obj) null-tag]
@@ -31,7 +31,7 @@
          (let ([val (char->integer obj)])
            (+ (* val (+ imm-mask 1)) char-tag))]
         [else
-         (error "~s not encodable" obj)]))))
+         (errorf "~s not encodable" obj)]))))
 
 (define header
   (lambda (len tag)
@@ -357,7 +357,7 @@
            `(addl ,(* 4 ws) sp)
            `(comment "end foreign-call")))]
       [else
-       (error "sanity-check: bad primitive ~s" name)])))
+       (errorf "sanity-check: bad primitive ~s" name)])))
 
 (define cg-true-inline
   (lambda (rander rands fs dd cd nextlab code)

@@ -1,4 +1,5 @@
 (define string-tag  #b011)
+(define symbol-tag  #b100)
 (define closure-tag #b110)
 (define vector-tag  #b101)
 
@@ -244,6 +245,14 @@
             `(label ,randlab)
             (cg-effect-rands (cdr ls) fs))))))
 
+(define cg-unary-rand
+  (lambda (rands fs)
+    (let ([rand (car rands)])
+      (let ([endlab (gen-label "unaryrand")])
+        (instructions
+          (cg rand fs 't1 endlab endlab)
+          `(label ,endlab))))))
+
 (define cg-binary-rands
   (lambda (rands fs)
     (let ([r0 (car rands)]
@@ -293,6 +302,14 @@
       [(= eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
          `(cmpl t1 t2))]
+      [(string->uninterned-symbol)
+       (cg-true-inline cg-rands rands fs dd cd nextlab  ; TODO: use cg-unary-rand
+         (instructions
+           (cg-allocate 2 'ac (+ fs ws) '())
+           `(movl ,(header 1 symbol-tag) (ac 0))
+           `(movl (fp ,fs) t1)
+           `(movl t1 (ac ,ws))
+           (cg-type-tag symbol-tag 'ac)))]
       [(string)
        (cg-true-inline cg-rands rands fs dd cd nextlab
          (instructions

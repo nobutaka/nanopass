@@ -26,6 +26,7 @@ struct RootSet {
 #define number_tag  0
 #define immed_tag   1
 #define string_tag  3
+#define symbol_tag  4
 #define vector_tag  5
 #define proc_tag    6
 
@@ -53,6 +54,7 @@ struct RootSet {
 #define OBJLENGTH(ptr)  (*OBJ(ptr) >> attr_len)
 #define OBJTAG(ptr)     TAG(*OBJ(ptr) >> 1)
 #define STRINGDATA(ptr) ((char *)(OBJ(ptr) + 1))
+#define SYMBOLNAME(ptr) (*(OBJ(ptr) + 1))
 #define VECTORDATA(ptr) (OBJ(ptr) + 1)
 
 /*#define VERBOSE*/
@@ -86,7 +88,8 @@ static unsigned int align(unsigned int n) { return (n+1) & ~1; } /* 2n alignment
 
 static char tag_to_char(unsigned int tag)
 {
-    if (tag == string_tag) return 's';
+    if (tag == string_tag) return 't';
+    if (tag == symbol_tag) return 's';
     if (tag == vector_tag) return 'v';
     if (tag == proc_tag) return 'p';
     return 'i';
@@ -99,7 +102,7 @@ static unsigned int object_size(Ptr *obj)
     unsigned int full_len = 1;
     if (tag == string_tag) {
         full_len += ((len+3) / 4);
-    } else if (tag == vector_tag) {
+    } else if (tag == symbol_tag || tag == vector_tag) {
         full_len += len;
     } else if (tag == proc_tag) {
         full_len += 1+len;
@@ -185,6 +188,7 @@ void gc_collect(struct RootSet *root)
         case string_tag:
             gc_scan += object_size(obj);
             break;
+        case symbol_tag:
         case vector_tag:
         case proc_tag:
             {
@@ -206,7 +210,19 @@ void gc_collect(struct RootSet *root)
     heap_end = gc_cur_space + gc_space_size;
 }
 
-void print(Ptr ptr)
+static void print_string(Ptr ptr)
+{
+    int n;
+    char *s;
+    n = OBJLENGTH(ptr);
+    s = STRINGDATA(ptr);
+    while (n--) {
+        if (*s == '"' || *s == '\\') printf("\\");
+        printf("%c", *s++);
+    }
+}
+
+static void print(Ptr ptr)
 {
     switch (TAG(ptr)) {
     case number_tag:
@@ -232,19 +248,13 @@ void print(Ptr ptr)
         }
         break;
     case string_tag:
-        {
-            int n;
-            char *s;
-            n = OBJLENGTH(ptr);
-            s = STRINGDATA(ptr);
-            printf("\"");
-            while (n--) {
-                if (*s == '"' || *s == '\\') printf("\\");
-                printf("%c", *s++);
-            }
-            printf("\"");
-            break;
-        }
+        printf("\"");
+        print_string(ptr);
+        printf("\"");
+        break;
+    case symbol_tag:
+        print_string(SYMBOLNAME(ptr));
+        break;
     case vector_tag:
         {
             int n;

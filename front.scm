@@ -6,6 +6,7 @@
 
 (define *prim-names*
   '(+ - = eq?
+     string->uninterned-symbol
      string
      vector vector-ref
      vector-set! gc))
@@ -232,6 +233,8 @@
 
 ;; ---------- Immediate-literal Form:  Lifting heap immediates
 
+(define s-table '())
+
 (define immediate-literal-form
   (lambda (exp)
     (let ([quoted (cadr exp)]
@@ -241,11 +244,23 @@
                 [q-vars (map car quoted)])
             (let ([exp `((lambda ,q-vars (quote (free)) ,exp) .
                          ,q-exps)])
-              exp))))))
+              (if (null? s-table) exp
+                  (let ([s-exps
+                          (map symbol-destruct (map car s-table))]
+                        [s-vars (map cadr s-table)])
+                    `((lambda ,s-vars (quote (free)) ,exp) .
+                      ,s-exps)))))))))
 
 (define heap-literal-destruct
   (lambda (obj)
     (cond
+      [(symbol? obj)
+       (let ([entry (assq obj s-table)])
+         (if (pair? entry)
+             (cadr entry)
+             (let ([v (gen-ssym)])
+               (set! s-table (cons (list obj v) s-table))
+               v)))]
       [(or (boolean? obj) (number? obj) (char? obj) (null? obj))
        `(quote ,obj)]
       [(string? obj)
@@ -255,6 +270,12 @@
        (let ([car-exp (heap-literal-destruct (car obj))]
              [cdr-exp (heap-literal-destruct (cdr obj))])
          `(cons ,car-exp ,cdr-exp))])))
+
+(define symbol-destruct
+  (lambda (sym)
+    (let ([char-exps (map (lambda (x) `(quote ,x))
+                       (string->list (symbol->string sym)))])
+      `(string->uninterned-symbol (string . ,char-exps)))))
 
 ;; ---------- Code-generation Form: converting variables and lambdas
 
@@ -328,4 +349,5 @@
         (and (not (memq (car ls) (cdr ls)))
              (set? (cdr ls))))))
 
-(define gen-qsym gensym)
+(define gen-qsym gensym)      ; variables holding quoted data
+(define gen-ssym gensym)      ; variables holding symbols

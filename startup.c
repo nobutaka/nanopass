@@ -25,6 +25,7 @@ struct RootSet {
 
 #define number_tag  0
 #define immed_tag   1
+#define pair_tag    2
 #define string_tag  3
 #define symbol_tag  4
 #define vector_tag  5
@@ -53,6 +54,8 @@ struct RootSet {
 #define OBJ(ptr)        ((Ptr *)UNTAG(ptr))
 #define OBJLENGTH(ptr)  (*OBJ(ptr) >> attr_len)
 #define OBJTAG(ptr)     TAG(*OBJ(ptr) >> 1)
+#define CAR(ptr)        (*(OBJ(ptr) + 1))
+#define CDR(ptr)        (*(OBJ(ptr) + 2))
 #define STRINGDATA(ptr) ((char *)(OBJ(ptr) + 1))
 #define SYMBOLNAME(ptr) (*(OBJ(ptr) + 1))
 #define VECTORDATA(ptr) (OBJ(ptr) + 1)
@@ -86,15 +89,6 @@ static void error_exit(const char *fmt, ...)
 
 static unsigned int align(unsigned int n) { return (n+1) & ~1; } /* 2n alignment */
 
-static char tag_to_char(unsigned int tag)
-{
-    if (tag == string_tag) return 't';
-    if (tag == symbol_tag) return 's';
-    if (tag == vector_tag) return 'v';
-    if (tag == proc_tag) return 'p';
-    return 'i';
-}
-
 static unsigned int object_size(Ptr *obj)
 {
     unsigned int tag = OBJTAG(obj);
@@ -102,10 +96,10 @@ static unsigned int object_size(Ptr *obj)
     unsigned int full_len = 1;
     if (tag == string_tag) {
         full_len += ((len+3) / 4);
-    } else if (tag == symbol_tag || tag == vector_tag) {
-        full_len += len;
     } else if (tag == proc_tag) {
         full_len += 1+len;
+    } else {                /* pair or symbol or vector */
+        full_len += len;
     }
     return align(full_len) * ws;
 }
@@ -141,10 +135,10 @@ static void gc_copy_forward(Ptr *p)
     Ptr *obj = OBJ(*p);
     if (obj == 0) { return; }                               /* null pointer -> ignore */
     if (forwarded(obj)) {   /* update pointer with forwarding info */
-        LOG("U%c", tag_to_char(tag));
+        LOG("U%x", tag);
         *p = UNTAG(*obj) | tag;
     } else {                /* copy and forward object */
-        LOG("C%c", tag_to_char(tag));
+        LOG("C%x", tag);
         unsigned int size = object_size(obj);
         memcpy(gc_free, obj, size);
         set_forward(obj, PTR(gc_free));
@@ -185,9 +179,7 @@ void gc_collect(struct RootSet *root)
         case immed_tag:
             error_exit("scan incorrect, unboxed type.\n");
             break;
-        case string_tag:
-            gc_scan += object_size(obj);
-            break;
+        case pair_tag:
         case symbol_tag:
         case vector_tag:
         case proc_tag:
@@ -200,6 +192,9 @@ void gc_collect(struct RootSet *root)
                 gc_scan += align(offset + len) * ws;
                 break;
             }
+        case string_tag:
+            gc_scan += object_size(obj);
+            break;
         }
     }
     LOG("switch roles of gc spaces\n");
@@ -246,6 +241,21 @@ static void print(Ptr ptr)
             }
             break;
         }
+        break;
+    case pair_tag:
+        printf("(");
+        print(CAR(ptr));
+        ptr = CDR(ptr);
+        while (TAG(ptr) == pair_tag) {
+            printf(" ");
+            print(CAR(ptr));
+            ptr = CDR(ptr);
+        }
+        if (IMMTAG(ptr) != null_tag) {
+            printf(" . ");
+            print(ptr);
+        }
+        printf(")");
         break;
     case string_tag:
         printf("\"");

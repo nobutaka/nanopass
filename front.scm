@@ -5,7 +5,7 @@
 ;; ---------- Core Form
 
 (define *prim-names*
-  '(+ - = eq?
+  '(+ - = cons eq?
      string->uninterned-symbol
      string
      vector vector-ref
@@ -269,7 +269,10 @@
       [(pair? obj)
        (let ([car-exp (heap-literal-destruct (car obj))]
              [cdr-exp (heap-literal-destruct (cdr obj))])
-         `(cons ,car-exp ,cdr-exp))])))
+         `(cons ,car-exp ,cdr-exp))]
+      [(vector? obj)
+       (let ([contents-exps (map heap-literal-destruct (vector->list obj))])
+         `(vector . ,contents-exps))])))
 
 (define symbol-destruct
   (lambda (sym)

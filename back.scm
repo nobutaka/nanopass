@@ -1,3 +1,4 @@
+(define pair-tag    #b010)
 (define string-tag  #b011)
 (define symbol-tag  #b100)
 (define closure-tag #b110)
@@ -302,6 +303,16 @@
       [(= eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
          `(cmpl t1 t2))]
+      [(cons)
+       (cg-true-inline cg-rands rands fs dd cd nextlab  ; TODO: use cg-binary-rands
+         (instructions
+           (cg-allocate 3 'ac (+ fs (* 2 ws)) '())
+           `(movl ,(header 2 pair-tag) (ac 0))
+           `(movl (fp ,fs) t1)
+           `(movl t1 (ac ,ws))
+           `(movl (fp ,(+ fs ws)) t2)
+           `(movl t2 (ac ,(* 2 ws)))
+           (cg-type-tag pair-tag 'ac)))]
       [(string->uninterned-symbol)
        (cg-true-inline cg-rands rands fs dd cd nextlab  ; TODO: use cg-unary-rand
          (instructions

@@ -5,7 +5,7 @@
     [(_ test-name [expr => output-string] ...)
      (set! all-tests
        (cons
-         '(test-name [(expr) output-string] ...)  ; transform expr from single form into multiple forms.
+         '(test-name [expr output-string] ...)
          all-tests))]))
 
 (define build-program

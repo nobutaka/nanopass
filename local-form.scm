@@ -1,8 +1,9 @@
 ; From:
-;; (foo)
-;; (define a (lambda () 1))
-;; (define b (lambda () 2))
-;; (a)
+;; (begin
+;;   (foo)
+;;   (define a (lambda () 1))
+;;   (define b (lambda () 2))
+;;   (a))
 
 ; To:
 ;; (let ([a #f]
@@ -13,8 +14,10 @@
 ;;   (a))
 
 (define local-form
-  (lambda (exps)
-    `(let ,(dummy-decls (defined-binds exps)) ,@(replace-define exps))))
+  (lambda (exp)
+    (if (not (begin-exp? exp))
+        exp
+        `(let ,(dummy-decls (defined-binds (cdr exp))) ,@(replace-define (cdr exp))))))
 
 (define defined-binds
   (lambda (exps)
@@ -41,6 +44,11 @@
             `(set! ,@(cdr exp))
             exp))
       exps)))
+
+(define begin-exp?
+  (lambda (exp)
+    (and (pair? exp)
+         (eq? (car exp) 'begin))))
 
 (define define-exp?
   (lambda (exp)

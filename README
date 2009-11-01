@@ -5,7 +5,7 @@ How to compile fib.
 
 in gauche
 > (load "./compiler.scm")
-> (x86 (cg-top (code-generation-form (immediate-literal-form (assignmentless-form (analyzed-form (cps-form (core-form (local-form '(letrec ((fib (lambda (n) (if (= n 0) n (if (= n 1) n (+ (fib (- n 1)) (fib (- n 2)))))))) (fib 35)))))))))))
+> (x86 (cg-top (code-generation-form (immediate-literal-form (assignmentless-form (analyzed-form (cps-form (core-form (local-form (macroless-form (append-library '(letrec ((fib (lambda (n) (if (= n 0) n (if (= n 1) n (+ (fib (- n 1)) (fib (- n 2)))))))) (fib 35)))))))))))))
 
 a.out will be created.
 

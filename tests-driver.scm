@@ -18,7 +18,9 @@
               (analyzed-form
                 (cps-form
                   (core-form
-                    (local-form expr)))))))))))
+                    (local-form
+                      (macroless-form
+                        (append-library expr)))))))))))))
 
 (define execute
   (lambda ()

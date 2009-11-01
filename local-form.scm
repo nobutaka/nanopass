@@ -6,35 +6,31 @@
 ;;   (a))
 
 ; To:
-;; (let ([a #f]
-;;       [b #f])
-;;   (foo)
-;;   (set! a (lambda () 1))
-;;   (set! b (lambda () 2))
-;;   (a))
+;; ((lambda (a b)
+;;    (foo)
+;;    (set! a (lambda () 1))
+;;    (set! b (lambda () 2))
+;;    (a))
+;;  #f #f)
 
 (define local-form
   (lambda (exp)
     (if (not (begin-exp? exp))
         exp
-        `(let ,(dummy-decls (defined-binds (cdr exp))) ,@(replace-define (cdr exp))))))
+        (let ([vars (defined-vars (cdr exp))])
+          `((lambda ,vars
+              ,@(replace-define (cdr exp)))
+            ,@(map (lambda (v) #f) vars))))))
 
-(define defined-binds
+(define defined-vars
   (lambda (exps)
     (fold
-      (lambda (exp binds)
+      (lambda (exp vars)
         (if (define-exp? exp)
-            (cons (cadr exp) binds)
-            binds))
+            (cons (cadr exp) vars)
+            vars))
       '()
       exps)))
-
-(define dummy-decls
-  (lambda (binds)
-    (map 
-      (lambda (bind)
-        `[,bind #f])
-      binds)))
 
 (define replace-define
   (lambda (exps)
@@ -45,12 +41,15 @@
             exp))
       exps)))
 
+(define exp?
+  (lambda (exp sym)
+    (and (pair? exp)
+         (eq? (car exp) sym))))
+
 (define begin-exp?
   (lambda (exp)
-    (and (pair? exp)
-         (eq? (car exp) 'begin))))
+    (exp? exp 'begin)))
 
 (define define-exp?
   (lambda (exp)
-    (and (pair? exp)
-         (eq? (car exp) 'define))))
+    (exp? exp 'define)))

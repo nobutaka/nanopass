@@ -303,6 +303,12 @@
       [(= eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
          `(cmpl t1 t2))]
+      [(car)
+       (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
+         `(movl (t1 ,(- ws pair-tag)) ac))]
+      [(cdr)
+       (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
+         `(movl (t1 ,(- (* 2 ws) pair-tag)) ac))]
       [(cons)
        (cg-true-inline cg-rands rands fs dd cd nextlab  ; TODO: use cg-binary-rands
          (instructions

@@ -7,6 +7,7 @@
         (let ([vars (map car decls)]
               [vals (map cadr decls)])
           `((lambda ,vars ,@bodies) ,@vals))))
+
     (define-macro letrec
       (lambda (decls . bodies)
         (let ([vars (map car decls)]
@@ -14,6 +15,19 @@
           (let ([holders (map (lambda (x) #f) vars)]
                 [assigns (map (lambda (v e) `(set! ,v ,e)) vars vals)])
             `((lambda ,vars ,@assigns ,@bodies) ,@holders)))))
+
+    (define caar (lambda (x) (car (car x))))
+    (define cadr (lambda (x) (car (cdr x))))
+    (define cdar (lambda (x) (cdr (car x))))
+    (define cddr (lambda (x) (cdr (cdr x))))
+    (define caaar (lambda (x) (car (car (car x)))))
+    (define caadr (lambda (x) (car (car (cdr x)))))
+    (define cadar (lambda (x) (car (cdr (car x)))))
+    (define caddr (lambda (x) (car (cdr (cdr x)))))
+    (define cdaar (lambda (x) (cdr (car (car x)))))
+    (define cdadr (lambda (x) (cdr (car (cdr x)))))
+    (define cddar (lambda (x) (cdr (cdr (car x)))))
+    (define cdddr (lambda (x) (cdr (cdr (cdr x)))))
 ))
 
 (define append-library

@@ -30,3 +30,18 @@
                '()))
    => "((#t #t . #t) ((#f . #f) . #f))\n"]
 )
+
+(add-tests-with-string-output "caar, cdar, etc."
+  [(caar (cons (cons 1 2) (cons 3 4))) => "1\n"]
+  [(cadr (cons (cons 1 2) (cons 3 4))) => "3\n"]
+  [(cdar (cons (cons 1 2) (cons 3 4))) => "2\n"]
+  [(cddr (cons (cons 1 2) (cons 3 4))) => "4\n"]
+  [(caaar (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "1\n"]
+  [(caadr (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "5\n"]
+  [(cadar (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "3\n"]
+  [(caddr (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "7\n"]
+  [(cdaar (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "2\n"]
+  [(cdadr (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "6\n"]
+  [(cddar (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "4\n"]
+  [(cdddr (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "8\n"]
+)

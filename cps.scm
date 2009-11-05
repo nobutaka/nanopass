@@ -38,7 +38,7 @@
            (let ([rator (car exp)]
                  [rands (cdr exp)])
              (if (and (symbol? rator)
-                      (memq rator *prim-names*))  ; TODO: refer to env
+                      (memq rator *prim-names*))  ; It may not necessary to refer to env. Primitives seem terminator of CPS conversion.
                  (cps-list rands (lambda (args)
                                    `(,cont-exp (,rator ,@args))))
                  (cps-list exp (lambda (args)

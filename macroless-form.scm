@@ -16,6 +16,16 @@
                 [assigns (map (lambda (v e) `(set! ,v ,e)) vars vals)])
             `((lambda ,vars ,@assigns ,@bodies) ,@holders)))))
 
+    ;; wraps primitives
+    (define + (lambda (x1 x2) (%+ x1 x2)))
+    (define - (lambda (x1 x2) (%- x1 x2)))
+    (define = (lambda (x1 x2) (%= x1 x2)))
+    (define eq? =)
+    (define car (lambda (x) (%car x)))
+    (define cdr (lambda (x) (%cdr x)))
+    (define cons (lambda (x1 x2) (%cons x1 x2)))
+    (define string->uninterned-symbol (lambda (x) (%string->uninterned-symbol x)))
+
     (define caar (lambda (x) (car (car x))))
     (define cadr (lambda (x) (car (cdr x))))
     (define cdar (lambda (x) (cdr (car x))))
@@ -48,9 +58,6 @@
       (map
         (lambda (e)
           (match e
-            [('define _ _)
-             (eval e env)
-             (expand e env)]
             [('define-macro _ _)
              (eval e env)
              e]

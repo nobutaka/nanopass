@@ -5,11 +5,11 @@
 ;; ---------- Core Form
 
 (define *prim-names*
-  '(+ - = car cdr cons eq?
-     string->uninterned-symbol
+  '(%+ %- %= %car %cdr %cons %eq?
+     %string->uninterned-symbol
      string
      vector vector-ref
-     vector-set! gc))
+     vector-set!))
 
 (define *keywords*
   '(quote begin if set! lambda))
@@ -258,7 +258,7 @@
       [(pair? obj)
        (let ([car-exp (heap-literal-destruct (car obj))]
              [cdr-exp (heap-literal-destruct (cdr obj))])
-         `(cons ,car-exp ,cdr-exp))]
+         `(%cons ,car-exp ,cdr-exp))]
       [(vector? obj)
        (let ([contents-exps (map heap-literal-destruct (vector->list obj))])
          `(vector . ,contents-exps))])))
@@ -267,7 +267,7 @@
   (lambda (sym)
     (let ([char-exps (map (lambda (x) `(quote ,x))
                        (string->list (symbol->string sym)))])
-      `(string->uninterned-symbol (string . ,char-exps)))))
+      `(%string->uninterned-symbol (string . ,char-exps)))))
 
 ;; ---------- Code-generation Form: converting variables and lambdas
 

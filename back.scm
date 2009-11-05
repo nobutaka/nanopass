@@ -290,26 +290,26 @@
 (define cg-inline
   (lambda (exp name rands fs dd cd nextlab)
     (case name
-      [(+)
+      [(%+)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
            `(movl t1 ac)
            `(addl t2 ac)))]
-      [(-)
+      [(%-)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
            `(movl t1 ac)
            `(subl t2 ac)))]
-      [(= eq?)
+      [(%= %eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
          `(cmpl t1 t2))]
-      [(car)
+      [(%car)
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- ws pair-tag)) ac))]
-      [(cdr)
+      [(%cdr)
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- (* 2 ws) pair-tag)) ac))]
-      [(cons)
+      [(%cons)
        (cg-true-inline cg-rands rands fs dd cd nextlab  ; TODO: use cg-binary-rands
          (instructions
            (cg-allocate 3 'ac (+ fs (* 2 ws)) '())
@@ -319,7 +319,7 @@
            `(movl (fp ,(+ fs ws)) t2)
            `(movl t2 (ac ,(* 2 ws)))
            (cg-type-tag pair-tag 'ac)))]
-      [(string->uninterned-symbol)
+      [(%string->uninterned-symbol)
        (cg-true-inline cg-rands rands fs dd cd nextlab  ; TODO: use cg-unary-rand
          (instructions
            (cg-allocate 2 'ac (+ fs ws) '())
@@ -379,17 +379,17 @@
              (instructions
                (cg-store 't3 dd)        ; why not?
                (cg-jump cd nextlab))))]
-      [(foreign-call)
-       (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
-         (instructions
-           `(comment "foreign-call")
-           `(pushl 3)
-           `(pushl 2)
-           `(pushl 1)
-           `(pushl sp)
-           `(call foreign_call)
-           `(addl ,(* 4 ws) sp)
-           `(comment "end foreign-call")))]
+;      [(foreign-call)
+;       (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
+;         (instructions
+;           `(comment "foreign-call")
+;           `(pushl 3)
+;           `(pushl 2)
+;           `(pushl 1)
+;           `(pushl sp)
+;           `(call foreign_call)
+;           `(addl ,(* 4 ws) sp)
+;           `(comment "end foreign-call")))]
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
 

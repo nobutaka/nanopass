@@ -25,6 +25,8 @@
     (define cdr (lambda (x) (%cdr x)))
     (define cons (lambda (x1 x2) (%cons x1 x2)))
     (define string->uninterned-symbol (lambda (x) (%string->uninterned-symbol x)))
+    (define vector-ref (lambda (v k) (%vector-ref v k)))
+    (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
 
     (define caar (lambda (x) (car (car x))))
     (define cadr (lambda (x) (car (cdr x))))

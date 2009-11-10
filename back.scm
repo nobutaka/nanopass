@@ -360,13 +360,13 @@
                    (loop (+ fpos ws) (+ vpos 1) (- num 1)))))
            (cg-type-tag vector-tag 'ac)
            `(comment "end vector")))]
-      [(vector-ref)
+      [(%vector-ref)
        (cg-ref-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
            `(sarl 1 t2)
            `(addl t2 t1)
            `(movl (t1 ,(- ws vector-tag)) ac)))]
-      [(vector-set!)
+      [(%vector-set!)
        (instructions
          (cg-ternary-rands rands fs)
          `(comment "vector-set")

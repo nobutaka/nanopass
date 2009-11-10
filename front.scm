@@ -8,8 +8,8 @@
   '(%+ %- %= %car %cdr %cons %eq?
      %string->uninterned-symbol
      string
-     vector vector-ref
-     vector-set!))
+     vector %vector-ref
+     %vector-set!))
 
 (define *keywords*
   '(quote begin if set! lambda))
@@ -176,7 +176,7 @@
   (lambda (exp env)
     (if (not (pair? exp))
         (if (memq exp env)
-            `(vector-ref ,exp (quote 0))
+            `(%vector-ref ,exp (quote 0))
             exp)
         (match exp
           [('quote obj) `(quote ,obj)]
@@ -191,7 +191,7 @@
              `(if ,t-exp ,c-exp ,a-exp))]
           [('set! v e)
            (let ([e-exp (assignment-convert e env)])
-             `(vector-set! ,v (quote 0) ,e-exp))]
+             `(%vector-set! ,v (quote 0) ,e-exp))]
           [('lambda formals poked free body)
            (let ([poked (cdadr poked)] ; remove the quote
                  [free (cdadr free)])

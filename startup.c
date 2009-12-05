@@ -30,6 +30,7 @@ struct RootSet {
 #define symbol_tag  4
 #define vector_tag  5
 #define proc_tag    6
+#define float_tag   7
 
 #define mask        7
 #define tag_len     3
@@ -131,9 +132,9 @@ static int forwarded(Ptr *obj) { return *obj & 0x1; }
 static void gc_copy_forward(Ptr *p)
 {
     unsigned int tag = TAG(*p);
-    if (tag == number_tag || tag == immed_tag) { return; }  /* number & immediate -> ignore */
+    if (tag == number_tag || tag == immed_tag || tag == float_tag) { return; }  /* number & immediate & float -> ignore */
     Ptr *obj = OBJ(*p);
-    if (obj == 0) { return; }                               /* null pointer -> ignore */
+    if (obj == 0) { return; }                                                   /* null pointer -> ignore */
     if (forwarded(obj)) {   /* update pointer with forwarding info */
         LOG("U%x", tag);
         *p = UNTAG(*obj) | tag;
@@ -177,6 +178,7 @@ void gc_collect(struct RootSet *root)
         switch (OBJTAG(obj)) {
         case number_tag:
         case immed_tag:
+        case float_tag:
             error_exit("scan incorrect, unboxed type.\n");
             break;
         case pair_tag:
@@ -285,6 +287,12 @@ static void print(Ptr ptr)
     case proc_tag:
         printf("<procedure>", ptr);
         break;
+    case float_tag:
+        {
+            Ptr f = UNTAG(ptr);
+            printf("%f", *(float *)&f);
+            break;
+        }
     default:
         printf("#<garbage %x>", (unsigned int)ptr);
         break;

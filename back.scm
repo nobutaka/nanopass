@@ -1,8 +1,12 @@
+(use binary.io)
+(use gauche.uvector)
+
 (define pair-tag    #b010)
 (define string-tag  #b011)
 (define symbol-tag  #b100)
-(define closure-tag #b110)
 (define vector-tag  #b101)
+(define closure-tag #b110)
+(define float-tag   #b111)
 
 (define mask        #b111)
 
@@ -20,12 +24,14 @@
   (let ([numtop (expt 2 29)])
     (lambda (obj)
       (cond
-        [(number? obj)
+        [(exact? obj)
          (cond
            [(and (<= 0 obj) (< obj numtop)) (* obj (+ mask 1))]
            [(and (<= (- numtop) obj) (< obj 0)) (* (+ numtop obj) (+ mask 1))]
            [else
             (errorf "~s is out of range" obj)])]
+        [(inexact? obj)
+         (logior (get-u32 (f32vector obj) 0) float-tag)]
         [(boolean? obj)
          (+ (* (if obj 1 0) (+ imm-mask 1)) bool-tag)]
         [(null? obj) null-tag]

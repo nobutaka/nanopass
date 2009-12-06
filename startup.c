@@ -289,8 +289,8 @@ static void print(Ptr ptr)
         break;
     case float_tag:
         {
-            Ptr f = UNTAG(ptr);
-            printf("%f", *(float *)&f);
+            Ptr x = UNTAG(ptr);
+            printf("%f", *(float *)&x);
             break;
         }
     default:

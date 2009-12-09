@@ -17,10 +17,14 @@
             `((lambda ,vars ,@assigns ,@bodies) ,@holders)))))
 
     ;; wraps primitives
-    (define + (lambda (x1 x2) (%+ x1 x2)))
-    (define - (lambda (x1 x2) (%- x1 x2)))
-    (define = (lambda (x1 x2) (%= x1 x2)))
-    (define eq? =)
+    (define eq? (lambda (x1 x2) (%eq? x1 x2)))
+    (define fx+ (lambda (x1 x2) (%fx+ x1 x2)))
+    (define fx- (lambda (x1 x2) (%fx- x1 x2)))
+    (define fx= eq?)
+    (define fl+ (lambda (x1 x2) (%fl+ x1 x2)))
+    (define + fx+)
+    (define - fx-)
+    (define = fx=)
     (define car (lambda (x) (%car x)))
     (define cdr (lambda (x) (%cdr x)))
     (define cons (lambda (x1 x2) (%cons x1 x2)))

@@ -5,7 +5,7 @@
 ;; ---------- Core Form
 
 (define *prim-names*
-  '(%+ %- %= %car %cdr %cons %eq?
+  '(%eq? %fx+ %fx- %fl+ %car %cdr %cons
      %string->uninterned-symbol
      string
      vector %vector-ref

@@ -296,19 +296,29 @@
 (define cg-inline
   (lambda (exp name rands fs dd cd nextlab)
     (case name
-      [(%+)
+      [(%eq?)
+       (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
+         `(cmpl t1 t2))]
+      [(%fx+)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
            `(movl t1 ac)
            `(addl t2 ac)))]
-      [(%-)
+      [(%fx-)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
            `(movl t1 ac)
            `(subl t2 ac)))]
-      [(%= %eq?)
-       (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
-         `(cmpl t1 t2))]
+      [(%fl+)
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
+           `(andl ,(not32 mask) t1)
+           `(andl ,(not32 mask) t2)
+           `(movd t1 xmm0)
+           `(movd t2 xmm1)
+           `(addss xmm1 xmm0)
+           `(movd xmm0 ac)
+           (cg-type-tag float-tag 'ac)))]
       [(%car)
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- ws pair-tag)) ac))]

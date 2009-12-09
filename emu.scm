@@ -14,7 +14,7 @@
         (x86-spit (registerize code))))))
 
 (define registerize
-  (let ([regs '((sp . esp) (fp . ebp) (cp . esi) (ap . edi) (ac . eax) (t1 . ebx) (t2 . ecx) (t3 . edx) (t1l . bl))])
+  (let ([regs '((sp . esp) (fp . ebp) (cp . esi) (ap . edi) (ac . eax) (t1 . ebx) (t2 . ecx) (t3 . edx) (t1l . bl) (xmm0 . xmm0) (xmm1 . xmm1))])
     (lambda (thing)
       (cond
         [(pair? thing)

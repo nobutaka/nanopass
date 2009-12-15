@@ -4,7 +4,7 @@
 (define x86
   (lambda (program)
     (x86-assemble program "t.s")
-    (unless (zero? (sys-system "gcc -m32 startup.c call_scheme.s t.s -o a.out"))
+    (unless (zero? (sys-system "gcc -m32 -fleading-underscore startup.c call_scheme.s t.s -o a.out"))
       (error "could not build target"))))
 
 (define x86-assemble
@@ -31,7 +31,7 @@
   (lambda (ls)
     (printf "\t.code32\n")
     (printf "\t.align 4\n")
-    (printf "\t.global _scheme_entry\n")
+    (printf "\t.globl _scheme_entry\n")
     (let loop ([ls (cdr ls)])
       (unless (null? ls)
         (let ([inst (car ls)])

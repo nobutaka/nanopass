@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -85,7 +85,7 @@ static void error_exit(const char *fmt, ...)
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
-    error(1);
+    exit(1);
 }
 
 static unsigned int align(unsigned int n) { return (n+1) & ~1; } /* 2n alignment */

@@ -1,15 +1,15 @@
 .data
 
-    .global heap_end
-heap_end:
+    .globl _heap_end
+_heap_end:
     .long 0
 
 .text
 
     .code32
     .align 4
-    .global call_scheme
-call_scheme:
+    .globl _call_scheme
+_call_scheme:
     movl %esp, %eax     # pointer to argument
     pushl %ebx
     pushl %esi

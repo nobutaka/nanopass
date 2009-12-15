@@ -457,7 +457,7 @@
                    (instructions
                      `(movl ap ,target)
                      `(addl ,(* n ws) ap)
-                     `(cmpl heap_end ap)
+                     `(cmpl _heap_end ap)
                      `(jbe ,dontlab)
                      (overflow n)
                      `(label ,dontlab))))])
@@ -479,7 +479,7 @@
                 `(pushl 0)
                 (error "Error in cg-allocate: Not implemented"))
             `(pushl sp)
-            `(call gc_collect)
+            `(call _gc_collect)
             `(addl ,(* 3 ws) sp)  ; skip sp,usedregs,stack_top
             `(popl cp)
             `(popl ap)

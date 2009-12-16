@@ -1,5 +1,5 @@
 This is a scheme compiler for my study.
-It runs on Linux x86 only.
+It runs on OS X (Intel) only.
 
 How to compile fib.
 

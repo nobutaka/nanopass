@@ -478,9 +478,12 @@
             (if (null? usedregs)
                 `(pushl 0)
                 (error "Error in cg-allocate: Not implemented"))
-            `(pushl sp)
+            `(movl sp ac)
+            `(subl ,(* 3 ws) sp)  ; padding bytes for OS X
+                                  ; 8 words struct + 3 paddings + 1 pointer = 12 words
+            `(pushl ac)
             `(call _gc_collect)
-            `(addl ,(* 3 ws) sp)  ; skip sp,usedregs,stack_top
+            `(addl ,(* 6 ws) sp)  ; skip pointer, paddings, usedregs, stack_top
             `(popl cp)
             `(popl ap)
             `(popl ac)

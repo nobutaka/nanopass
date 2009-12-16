@@ -1,4 +1,5 @@
 *.swp
 t.s
 a.out
+*.dSYM
 output

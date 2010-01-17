@@ -31,6 +31,7 @@
     (define string->uninterned-symbol (lambda (x) (%string->uninterned-symbol x)))
     (define vector-ref (lambda (v k) (%vector-ref v k)))
     (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
+    (define apply (lambda (proc args) (%apply proc args)))
 
     (define caar (lambda (x) (car (car x))))
     (define cadr (lambda (x) (car (cdr x))))

@@ -40,7 +40,9 @@
              (if (and (symbol? rator)
                       (memq rator *prim-names*))  ; It may not necessary to refer to env. Primitives seem terminator of CPS conversion.
                  (cps-list rands (lambda (args)
-                                   `(,cont-exp (,rator ,@args))))
+                                   (if (eq? rator '%apply)
+                                       `(,rator ,cont-exp ,@args)
+                                       `(,cont-exp (,rator ,@args)))))
                  (cps-list exp (lambda (args)
                                  (cons (car args)
                                        (cons cont-exp

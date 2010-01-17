@@ -9,7 +9,8 @@
      %string->uninterned-symbol
      string
      vector %vector-ref
-     %vector-set!))
+     %vector-set!
+     %apply))
 
 (define *keywords*
   '(quote begin if set! lambda))

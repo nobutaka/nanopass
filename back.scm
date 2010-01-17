@@ -135,6 +135,28 @@
              [rands (cdr exp)]
              [ratorlab (gen-label "endrator")])
          (cond
+           [(and (eq? rator '%apply) (eq? cd 'return))
+            (instructions
+              ;; expand args and shuffle the stack at once
+              (cg-ternary-rands rands fs)   ; t1=cont-exp, t2=proc, t3=args
+              `(movl t1 (fp ,ws))           ; push cont-exp to stack
+              `(movl fp t1)                 ; t1=stack top
+              `(addl ,(* 2 ws) t1)
+              (let ([looplab (gen-label "loop")]
+                    [breaklab (gen-label "break")])
+                (instructions
+                  `(label ,looplab)
+                  `(cmpl ,(encode '()) t3)
+                  `(je ,breaklab)
+                  `(movl (t3 ,(- ws pair-tag)) ac)        ; push car to stack
+                  `(movl ac (t1 0))
+                  `(addl ,ws t1)
+                  `(movl (t3 ,(- (* 2 ws) pair-tag)) t3)  ; t3=cdr
+                  `(jmp ,looplab)
+                  `(label ,breaklab)))
+              ;; call
+              `(movl t2 ac)   ; ac=proc
+              (cg-jump-closure))]
            [(symbol? rator)
             (cg-inline exp rator rands fs dd cd nextlab)]
            [(eq? cd 'return)
@@ -143,11 +165,7 @@
               (cg rator (+ fs (* (length rands) ws)) 'ac ratorlab ratorlab)
               `(label ,ratorlab)
               (cg-shuffle fs (length rands))
-              `(movl ,mask cp)
-              `(notl cp)
-              `(andl ac cp)
-              `(movl (cp ,(* 1 ws)) ac)
-              `(jmp (near ac)))]
+              (cg-jump-closure))]
            [else
             (error "Error in else: Not implemented")]))])))
 
@@ -173,6 +191,15 @@
             (instructions)
             (instructions
               `(jmp ,lab))))))
+
+(define cg-jump-closure
+  (lambda ()
+    (instructions
+      `(movl ,mask cp)
+      `(notl cp)
+      `(andl ac cp)
+      `(movl (cp ,(* 1 ws)) ac)
+      `(jmp (near ac)))))
 
 (define cg-branch
   (lambda (truelab falselab nextlab jump-if-true jump-if-false)

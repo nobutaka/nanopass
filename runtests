@@ -7,6 +7,7 @@
 (load "./tests-1.8-req.scm")
 (load "./tests-2.3-req.scm")
 (load "./tests-2.8-req.scm")
+(load "./tests-3.4-req.scm")
 (load "./tests-5.3-req.scm")
 (load "./tests-6.1-req.scm")
 (load "./tests-6.2-req.scm")

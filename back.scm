@@ -41,6 +41,18 @@
         [else
          (errorf "~s not encodable" obj)]))))
 
+(define encode-regs
+  (let ([symbols '(ac t1 t2 t3)])
+    (let ([bits (map (lambda (symbol index)
+                       (cons symbol (ash 1 index)))
+                     symbols
+                     (iota (length symbols)))])
+      (lambda (regs)
+        (fold (lambda (reg val)
+                (logior val (cdr (assq reg bits))))
+              0
+              regs)))))
+
 (define header
   (lambda (len tag)
     (ash (logior (ash len tag-len) tag) 1)))
@@ -502,9 +514,7 @@
             `(movl fp ac)
             `(addl ,fs ac)
             `(pushl ac)           ; push stack top
-            (if (null? usedregs)
-                `(pushl 0)
-                (error "Error in cg-allocate: Not implemented"))
+            `(pushl ,(encode-regs usedregs))
             `(movl sp ac)
             `(subl ,(* 3 ws) sp)  ; padding bytes for OS X
                                   ; 8 words struct + 3 paddings + 1 pointer = 12 words

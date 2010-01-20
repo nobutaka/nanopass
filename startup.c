@@ -8,17 +8,12 @@ typedef long Ptr;
 struct RootSet {
     unsigned int usedregs;
     char *stack_top;
-    union {
-        Ptr ind[6];
-        struct {
-            Ptr cp;
-            char *ap;
-            Ptr ac;
-            Ptr t1;
-            Ptr t2;
-            Ptr t3;
-        } sym;
-    } regs;
+    Ptr cp;
+    char *ap;
+    Ptr ac;
+    Ptr t1;
+    Ptr t2;
+    Ptr t3;
 };
 
 #define ws          4
@@ -43,6 +38,11 @@ struct RootSet {
 #define imm_mask    0xFF
 
 #define attr_len    (tag_len + 1)
+
+#define ac_bit      (1<<0)
+#define t1_bit      (1<<1)
+#define t2_bit      (1<<2)
+#define t3_bit      (1<<3)
 
 #define default_heap_size   (4*10000)
 #define default_stack_size  (4*10000)
@@ -151,13 +151,15 @@ static void gc_copy_forward(Ptr *p)
 static void gc_walk_roots(struct RootSet *root)
 {
     LOG("gc_walk_roots\n");
-    if (root->usedregs != 0) {
-        error_exit("not implemented\n");
-    }
     LOG("walk registers\n");
-    root->regs.sym.cp |= proc_tag;                  /* cp is untagged. tag it temporarily. */
-    gc_copy_forward(&root->regs.sym.cp); LOG("\n");
-    root->regs.sym.cp = UNTAG(root->regs.sym.cp);
+    root->cp |= proc_tag;                  /* cp is untagged. tag it temporarily. */
+    gc_copy_forward(&root->cp);
+    root->cp = UNTAG(root->cp);
+    if (root->usedregs & ac_bit) gc_copy_forward(&root->ac);
+    if (root->usedregs & t1_bit) gc_copy_forward(&root->t1);
+    if (root->usedregs & t2_bit) gc_copy_forward(&root->t2);
+    if (root->usedregs & t3_bit) gc_copy_forward(&root->t3);
+    LOG("\n");
     LOG("walk stack\n");                            /* walk only one frame now */
     Ptr *p = (Ptr *)stack_bottom;
     p++;                                            /* skip return code pointer */
@@ -203,7 +205,7 @@ void gc_collect(struct RootSet *root)
     char *temp = gc_to_space;
     gc_to_space = gc_cur_space;
     gc_cur_space = temp;
-    root->regs.sym.ap = gc_free;
+    root->ap = gc_free;
     heap_end = gc_cur_space + gc_space_size;
 }
 

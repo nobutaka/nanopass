@@ -127,16 +127,14 @@
              (instructions
                `(comment "build-closure")
                (cg-allocate (+ (length fvars) 2) 'ac fs '())
-               `(movl ,(header (length fvars) closure-tag) t1)
-               `(movl t1 (ac 0))
-               `(movl (imm ,codelab) t1)
-               `(movl t1 (ac ,(* 1 ws)))
+               `(movl ,(header (length fvars) closure-tag) (ac 0))
+               `(movl (imm ,codelab) (ac ,(* 1 ws)))
                (let f ([ls fvars] [pos 2])
                  (if (null? ls)
                      (instructions)
                      (instructions
-                       `(movl ,(varref->address (car ls)) t3)
-                       `(movl t3 (ac ,(* pos ws)))
+                       `(movl ,(varref->address (car ls)) t1)
+                       `(movl t1 (ac ,(* pos ws)))
                        (f (cdr ls) (+ pos 1)))))
                (cg-type-tag closure-tag 'ac)
                (cg-store 'ac dd)
@@ -365,21 +363,18 @@
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- (* 2 ws) pair-tag)) ac))]
       [(%cons)
-       (cg-true-inline cg-rands rands fs dd cd nextlab  ; TODO: use cg-binary-rands
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
-           (cg-allocate 3 'ac (+ fs (* 2 ws)) '())
+           (cg-allocate 3 'ac fs '(t1 t2))
            `(movl ,(header 2 pair-tag) (ac 0))
-           `(movl (fp ,fs) t1)
            `(movl t1 (ac ,ws))
-           `(movl (fp ,(+ fs ws)) t2)
            `(movl t2 (ac ,(* 2 ws)))
            (cg-type-tag pair-tag 'ac)))]
       [(%string->uninterned-symbol)
-       (cg-true-inline cg-rands rands fs dd cd nextlab  ; TODO: use cg-unary-rand
+       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
-           (cg-allocate 2 'ac (+ fs ws) '())
+           (cg-allocate 2 'ac fs '(t1))
            `(movl ,(header 1 symbol-tag) (ac 0))
-           `(movl (fp ,fs) t1)
            `(movl t1 (ac ,ws))
            (cg-type-tag symbol-tag 'ac)))]
       [(string)
@@ -387,8 +382,7 @@
          (instructions
            `(comment "string")
            (cg-allocate (+ (quotient (+ (length rands) (- ws 1)) ws) 1) 'ac (+ fs (* (length rands) ws)) '())
-           `(movl ,(header (length rands) string-tag) t1)
-           `(movl t1 (ac 0))
+           `(movl ,(header (length rands) string-tag) (ac 0))
            (let loop ([fpos fs] [spos ws] [num (length rands)])
              (if (zero? num)
                  (instructions)
@@ -404,8 +398,7 @@
          (instructions
            `(comment "vector")
            (cg-allocate (+ (length rands) 1) 'ac (+ fs (* (length rands) ws)) '())
-           `(movl ,(header (length rands) vector-tag) t1)
-           `(movl t1 (ac 0))
+           `(movl ,(header (length rands) vector-tag) (ac 0))
            (let loop ([fpos fs] [vpos 1] [num (length rands)])
              (if (zero? num)
                  (instructions)

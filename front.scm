@@ -50,14 +50,13 @@
               (let ([new-e (core-convert e)])
                 `(set! ,v ,new-e))])]
           [('lambda formals . bodies)
-           (if (not (and (list? formals)
-                         (every symbol? formals)
-                         (every (lambda (x) (not (memq x *keywords*)))
-                           formals)
-                         (set? formals)))
-               (errorf "Bad formals ~s in ~s" formals exp)
-               (let ([new-body (core-convert `(begin ,@bodies))])
-                 `(lambda ,formals ,new-body)))]
+           (let ([pformals (improper->proper formals)])
+             (if (not (and (every symbol? pformals)
+                           (every (lambda (x) (not (memq x *keywords*))) pformals)
+                           (set? pformals)))
+                 (errorf "Bad formals ~s in ~s" formals exp)
+                 (let ([new-body (core-convert `(begin ,@bodies))])
+                   `(lambda ,formals ,new-body))))]
           [else
            (if (or (null? exp)
                    (not (list? exp))
@@ -123,17 +122,20 @@
                    (union (unit-set v) e-poked)
                    (union (unit-set v) e-free))))]
           [('lambda formals body)
-           (let-values ([(body-exp body-quotes body-poked body-free)
-                         (analyze body (append formals env))])
-             (let ([poked (intersection body-poked formals)]
-                   [free-poked (difference body-poked formals)]
-                   [free (difference body-free formals)])
-               (values `(lambda ,formals (quote (assigned . ,poked))
-                          (quote (free . ,free))
-                          ,body-exp)
-                 body-quotes
-                 free-poked
-                 free)))]
+           (let ([pformals (improper->proper formals)])
+             (let-values ([(body-exp body-quotes body-poked body-free)
+                           (analyze body (append pformals env))])
+               (let ([poked (intersection body-poked pformals)]
+                     [free-poked (difference body-poked pformals)]
+                     [free (difference body-free pformals)])
+                 (values `(lambda ,pformals
+                            '(assigned . ,poked)
+                            '(free . ,free)
+                            ,(if (list? formals) '(fixed) '(variable))
+                            ,body-exp)
+                   body-quotes
+                   free-poked
+                   free))))]
           [else
            (let ([rator (car exp)]
                  [rands (cdr exp)])
@@ -193,21 +195,23 @@
           [('set! v e)
            (let ([e-exp (assignment-convert e env)])
              `(%vector-set! ,v (quote 0) ,e-exp))]
-          [('lambda formals poked free body)
+          [('lambda formals poked free arity body)
            (let ([poked (cdadr poked)] ; remove the quote
                  [free (cdadr free)])
              (let ([new-env (union poked (difference env formals))])
                (let ([body-exp (assignment-convert body new-env)])
                  (if (null? poked)
-                     `(lambda ,formals (quote (free . ,free)) ,body-exp)
+                     `(lambda ,formals (quote (free . ,free)) ,arity ,body-exp)
                      (let ([poked-exps
                              (map (lambda (pv) `(vector ,pv)) poked)]
                            [new-frees
                              (union free (difference formals poked))])
                        `(lambda ,formals
                           (quote (free . ,free))
+                          ,arity
                           ((lambda ,poked
-                             (quote (free . ,new-frees))
+                             '(free . ,new-frees)
+                             '(fixed)
                              ,body-exp) .
                              ,poked-exps)))))))]
           [else
@@ -232,13 +236,13 @@
       (if (null? quoted) exp
           (let ([q-exps (map heap-literal-destruct (map cadadr quoted))]
                 [q-vars (map car quoted)])
-            (let ([exp `((lambda ,q-vars (quote (free)) ,exp) .
+            (let ([exp `((lambda ,q-vars '(free) '(fixed) ,exp) .
                          ,q-exps)])
               (if (null? s-table) exp
                   (let ([s-exps
                           (map symbol-destruct (map car s-table))]
                         [s-vars (map cadr s-table)])
-                    `((lambda ,s-vars (quote (free)) ,exp) .
+                    `((lambda ,s-vars '(free) '(fixed) ,exp) .
                       ,s-exps)))))))))
 
 (define heap-literal-destruct
@@ -298,11 +302,11 @@
                  [c-exp (cg-form-convert c bounds frees)]
                  [a-exp (cg-form-convert a bounds frees)])
              `(if ,t-exp ,c-exp ,a-exp))]
-          [('lambda formals quoted-frees body)
+          [('lambda formals quoted-frees arity body)
            (let ([free (cdadr quoted-frees)]) ; getting rid of the quote
              (let ([free-exps (cg-form-convert-list free bounds frees)]
                    [body-exp (cg-form-convert body formals free)])
-               `(build-closure (lambda ,formals ,body-exp) .
+               `(build-closure (lambda ,formals ,arity ,body-exp) .
                   ,free-exps)))]
           [else
            (let ([rator (car exp)] [rands (cdr exp)])
@@ -315,6 +319,15 @@
     (map (lambda (e) (cg-form-convert e bounds frees)) ls)))
 
 ;; ---------- Utility procedures
+
+(define fix-list
+  (lambda (lst)
+    (cond ((not (pair? lst)) (cons lst '()))
+          (else (cons (car lst) (fix-list (cdr lst)))))))
+
+(define improper->proper ; seems apply this transform: (a b c . d) -> (a b c d)
+  (lambda (x)
+    (if (list? x) x (fix-list x))))
 
 (define my-list-index
   (lambda (v ls)

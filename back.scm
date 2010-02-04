@@ -74,7 +74,7 @@
 (define cg-top
   (lambda (exp)
     (set! todo
-      (cons (list '_scheme_entry `(lambda () ,exp)) todo))
+      (cons (list '_scheme_entry `(lambda () '(fixed) ,exp)) todo))
     (cg-code)))
 
 (define cg-code
@@ -86,7 +86,7 @@
           (set! todo rest)
           (let ([label (car first)])
             (match (cadr first)
-              [('lambda formals body)
+              [('lambda formals arity body)
                (instructions
                  `(label ,label)
                  (cg body (* (+ (length formals) 1) ws)
@@ -164,6 +164,10 @@
                   `(movl (t3 ,(- (* 2 ws) pair-tag)) t3)  ; t3=cdr
                   `(jmp ,looplab)
                   `(label ,breaklab)))
+              ;; pass the number of arguments
+              `(subl fp t1)   ; t1=number of arguments
+              `(subl ,ws t1)  ; get rid of return address
+              `(sarl 2 t1)    ; t1=t1/ws
               ;; call
               `(movl t2 ac)   ; ac=proc
               (cg-jump-closure))]
@@ -175,6 +179,7 @@
               (cg rator (+ fs (* (length rands) ws)) 'ac ratorlab ratorlab)
               `(label ,ratorlab)
               (cg-shuffle fs (length rands))
+              `(movl ,(length rands) t1)
               (cg-jump-closure))]
            [else
             (error "Error in else: Not implemented")]))])))

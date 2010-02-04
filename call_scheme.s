@@ -21,6 +21,7 @@ _call_scheme:
     movl 8(%eax), %edi                  # heap
     movl 4(%eax), %ebp                  # stack
     movl $return_from_scheme, (%ebp)    # set fp to return address
+    movl $0, %ebx                       # set t1 to 0 (number of arguments)
     jmp _scheme_entry
 
     .align 4

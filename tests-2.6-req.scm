@@ -1,5 +1,4 @@
-; vararg tests
-
+;; vararg tests
 
 (add-tests-with-string-output "vararg not using rest argument"
   [(let ([f (lambda args 12)])
@@ -44,7 +43,6 @@
     (f 10 20 30 40 50 60 70 80 90 100)) => "#(10 20 30 40 50 60)\n"]
 )
 
-
 (add-tests-with-string-output "vararg using rest argument"
   [(let ([f (lambda args args)])
     (f)) => "()\n"]
@@ -74,4 +72,9 @@
     (f 10 20 30 40 50 60 70 80 90)) => "#(10 20 30 40 50 (60 70 80 90))\n"]
   [(let ([f (lambda (a0 a1 a2 a3 a4 a5 . args)(vector a0 a1 a2 a3 a4 a5 args))])
     (f 10 20 30 40 50 60 70 80 90)) => "#(10 20 30 40 50 60 (70 80 90))\n"]
+)
+
+(add-tests-with-string-output "pack and unpack"
+  [(let ([f (lambda args args)])
+    (apply f (cons 10 (cons 20 '())))) => "(10 20)\n"]
 )

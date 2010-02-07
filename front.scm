@@ -131,7 +131,7 @@
                  (values `(lambda ,pformals
                             '(assigned . ,poked)
                             '(free . ,free)
-                            ,(if (list? formals) '(fixed) '(variable))
+                            '(,(if (list? formals) 'fixed 'variable))
                             ,body-exp)
                    body-quotes
                    free-poked

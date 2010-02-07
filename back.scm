@@ -89,9 +89,55 @@
               [('lambda formals arity body)
                (instructions
                  `(label ,label)
+                 (cg-prologue formals arity)
                  (cg body (* (+ (length formals) 1) ws)
                    'ac 'return 'ignored)
                  (cg-code))]))))))
+
+(define cg-prologue
+  (lambda (formals arity)
+    (let ([correctlab (gen-label "correctarg")]
+          [is-var (eq? (caadr arity) 'variable)])
+      (let ([leastlen (- (length formals) (if is-var 1 0))])
+        (instructions
+          ;; check number of arguments
+          `(movl t1 t3)       ; t3=number of arguments
+          `(cmpl ,leastlen t3)
+          `(jae ,correctlab)  ; leastlen<=t3
+          faultcode           ; Missing argument
+          `(label ,correctlab)
+          ;; pack arguments if arity is variable
+          (if is-var
+              (let ([looplab (gen-label "packloop")]
+                    [dontlab (gen-label "dontpack")])
+                (instructions
+                  `(comment "pack arguments")
+                  `(movl ,(encode '()) ac)  ; ac=list
+                  `(cmpl ,leastlen t3)
+                  `(je ,dontlab)
+                  `(movl t3 t1)       ; t1=address of obj1 on stack. it's under the stack top.
+                  `(sall 2 t1)        ; t1=t1*ws
+                  `(addl fp t1)
+                  `(movl fp t3)       ; t3=end
+                  `(addl ,(* leastlen ws) t3) ; TODO: don't have to emit code if leastlen is zero
+                  `(label ,looplab)
+                  `(movl ac t2)       ; t2=obj2
+                  (cg-alloc-pair      ; ac=(cons obj1 obj2)
+                    (instructions
+                      `(movl t1 ac)
+                      `(addl ,ws ac))
+                    '(t2)
+                    (instructions
+                      `(movl t2 (ac ,(* 2 ws)))
+                      `(movl (t1 0) t2)
+                      `(movl t2 (ac ,(* 1 ws)))))
+                  `(subl ,ws t1)      ; t1=t1-ws
+                  `(cmpl t3 t1)       ; if t3<t1 goto looplab
+                  `(ja ,looplab)
+                  `(label ,dontlab)
+                  `(movl ac (fp ,(* (length formals) ws)))
+                  `(comment "end pack arguments")))
+              (instructions)))))))
 
 (define varref->address
   (lambda (exp)
@@ -147,13 +193,14 @@
          (cond
            [(and (eq? rator '%apply) (eq? cd 'return))
             (instructions
+              `(comment "apply")
               ;; expand args and shuffle the stack at once
               (cg-ternary-rands rands fs)   ; t1=cont-exp, t2=proc, t3=args
               `(movl t1 (fp ,ws))           ; push cont-exp to stack
               `(movl fp t1)                 ; t1=stack top
               `(addl ,(* 2 ws) t1)
-              (let ([looplab (gen-label "loop")]
-                    [breaklab (gen-label "break")])
+              (let ([looplab (gen-label "apploop")]
+                    [breaklab (gen-label "appbreak")])
                 (instructions
                   `(label ,looplab)
                   `(cmpl ,(encode '()) t3)
@@ -170,7 +217,8 @@
               `(sarl 2 t1)    ; t1=t1/ws
               ;; call
               `(movl t2 ac)   ; ac=proc
-              (cg-jump-closure))]
+              (cg-jump-closure)
+              `(comment "end apply"))]
            [(symbol? rator)
             (cg-inline exp rator rands fs dd cd nextlab)]
            [(eq? cd 'return)
@@ -369,12 +417,10 @@
          `(movl (t1 ,(- (* 2 ws) pair-tag)) ac))]
       [(%cons)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
-         (instructions
-           (cg-allocate 3 'ac fs '(t1 t2))
-           `(movl ,(header 2 pair-tag) (ac 0))
-           `(movl t1 (ac ,ws))
-           `(movl t2 (ac ,(* 2 ws)))
-           (cg-type-tag pair-tag 'ac)))]
+         (cg-alloc-pair (cg-stacktop fs) '(t1 t2)
+           (instructions
+             `(movl t1 (ac ,(* 1 ws)))
+             `(movl t2 (ac ,(* 2 ws))))))]
       [(%string->uninterned-symbol)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
@@ -446,6 +492,14 @@
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
 
+(define cg-alloc-pair
+  (lambda (frameinfocode usedregs buildcode)
+    (instructions
+      (cg-allocate-frameinfo 3 'ac frameinfocode usedregs)
+      `(movl ,(header 2 pair-tag) (ac 0))
+      buildcode
+      (cg-type-tag pair-tag 'ac))))
+
 (define cg-true-inline
   (lambda (rander rands fs dd cd nextlab code)
     (if (eq? dd 'effect)
@@ -485,8 +539,18 @@
   (lambda (tag reg)
     `(orl ,tag ,reg)))
 
+(define cg-stacktop
+  (lambda (fs)
+    (instructions
+      `(movl fp ac)
+      `(addl ,fs ac))))
+
 (define cg-allocate
   (lambda (n target fs usedregs)
+    (cg-allocate-frameinfo n target (cg-stacktop fs) usedregs)))
+
+(define cg-allocate-frameinfo
+  (lambda (n target frameinfocode usedregs)
     (letrec ([allocate
                (lambda (overflow)
                  (let ([n (if (even? n) n (+ n 1))]
@@ -509,8 +573,7 @@
             `(pushl ac)
             `(pushl ap)
             `(pushl cp)
-            `(movl fp ac)
-            `(addl ,fs ac)
+            frameinfocode
             `(pushl ac)           ; push stack top
             `(pushl ,(encode-regs usedregs))
             `(movl sp ac)
@@ -526,12 +589,13 @@
             `(popl t2)
             `(popl t3)
             (allocate
-              (lambda (n)
-                (instructions
-                  ; No more memory. This may causes segmentation fault.
-                  `(movl 0 ac)
-                  `(movl (ac 0) ac))))
+              (lambda (n) faultcode)) ; No more memory.
             `(comment "end gc")))))))
+
+(define faultcode
+  (instructions
+    `(movl 0 ac)
+    `(movl (ac 0) ac))) ; This may causes segmentation fault.
 
 (define join-labels
   (lambda (a b)

@@ -587,7 +587,7 @@
           `(popl t1)
           `(popl t2)
           `(popl t3)
-          (allocate faultcode) ; No more memory.
+          (allocate faultcode)  ; No more memory.
           `(comment "end gc"))))))
 
 (define faultcode

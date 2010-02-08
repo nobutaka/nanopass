@@ -551,46 +551,44 @@
 
 (define cg-allocate-frameinfo
   (lambda (n target frameinfocode usedregs)
-    (letrec ([allocate
-               (lambda (overflow)
-                 (let ([n (if (even? n) n (+ n 1))]
-                       [dontlab (gen-label "dontgc")])
+    (letrec ([aligned (if (even? n) n (+ n 1))]
+             [allocate
+               (lambda (overflowcode)
+                 (let ([dontlab (gen-label "dontgc")])
                    (instructions
                      `(movl ap ,target)
-                     `(addl ,(* n ws) ap)
+                     `(addl ,(* aligned ws) ap)
                      `(cmpl _heap_end ap)
                      `(jbe ,dontlab)
-                     (overflow n)
+                     overflowcode
                      `(label ,dontlab))))])
       (allocate
-        (lambda (n)
-          (instructions
-            `(comment "gc")
-            `(subl ,(* n ws) ap)  ; revert ap
-            `(pushl t3)
-            `(pushl t2)
-            `(pushl t1)
-            `(pushl ac)
-            `(pushl ap)
-            `(pushl cp)
-            frameinfocode
-            `(pushl ac)           ; push stack top
-            `(pushl ,(encode-regs usedregs))
-            `(movl sp ac)
-            `(subl ,(* 3 ws) sp)  ; padding bytes for OS X
-                                  ; 8 words struct + 3 paddings + 1 pointer = 12 words
-            `(pushl ac)
-            `(call _gc_collect)
-            `(addl ,(* 6 ws) sp)  ; skip pointer, paddings, usedregs, stack_top
-            `(popl cp)
-            `(popl ap)
-            `(popl ac)
-            `(popl t1)
-            `(popl t2)
-            `(popl t3)
-            (allocate
-              (lambda (n) faultcode)) ; No more memory.
-            `(comment "end gc")))))))
+        (instructions
+          `(comment "gc")
+          `(subl ,(* aligned ws) ap)  ; revert ap
+          `(pushl t3)
+          `(pushl t2)
+          `(pushl t1)
+          `(pushl ac)
+          `(pushl ap)
+          `(pushl cp)
+          frameinfocode
+          `(pushl ac)           ; push stack top
+          `(pushl ,(encode-regs usedregs))
+          `(movl sp ac)
+          `(subl ,(* 3 ws) sp)  ; padding bytes for OS X
+                                ; 8 words struct + 3 paddings + 1 pointer = 12 words
+          `(pushl ac)
+          `(call _gc_collect)
+          `(addl ,(* 6 ws) sp)  ; skip pointer, paddings, usedregs, stack_top
+          `(popl cp)
+          `(popl ap)
+          `(popl ac)
+          `(popl t1)
+          `(popl t2)
+          `(popl t3)
+          (allocate faultcode) ; No more memory.
+          `(comment "end gc"))))))
 
 (define faultcode
   (instructions

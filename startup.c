@@ -116,8 +116,10 @@ static unsigned int content_offset(Ptr *obj)
 static void gc_initialize(unsigned int heap_size)
 {
     gc_space_size = heap_size;
-    gc_cur_space = calloc(1, gc_space_size);
-    gc_to_space = calloc(1, gc_space_size);
+    gc_cur_space = malloc(gc_space_size);
+    memset(gc_cur_space, 0xcd, gc_space_size);
+    gc_to_space = malloc(gc_space_size);
+    memset(gc_to_space, 0xfd, gc_space_size);
     heap_end = gc_cur_space + gc_space_size;
 
     if (TAG(gc_cur_space) != 0 || TAG(gc_to_space) != 0) {
@@ -172,7 +174,7 @@ static void gc_walk_roots(struct RootSet *root)
 void gc_collect(struct RootSet *root)
 {
     LOG(";; gc_collect called\n");
-    /*memset(gc_to_space, 0, gc_space_size);*/
+    memset(gc_to_space, 0xcd, gc_space_size);
     gc_scan = gc_free = gc_to_space;
     gc_walk_roots(root);
     while (gc_scan < gc_free) {
@@ -207,6 +209,7 @@ void gc_collect(struct RootSet *root)
     gc_cur_space = temp;
     root->ap = gc_free;
     heap_end = gc_cur_space + gc_space_size;
+    memset(gc_to_space, 0xfd, gc_space_size);
 }
 
 static void print_string(Ptr ptr)
@@ -303,7 +306,8 @@ static void print(Ptr ptr)
 
 int main(int argc, char *argv[])
 {
-    stack_bottom = calloc(1, default_stack_size);
+    stack_bottom = malloc(default_stack_size);
+    memset(stack_bottom, 0xcc, default_stack_size);
     gc_initialize(default_heap_size);
 
     print(call_scheme(stack_bottom, gc_cur_space));

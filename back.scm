@@ -122,7 +122,7 @@
                   `(addl ,(* leastlen ws) t3) ; TODO: don't have to emit code if leastlen is zero
                   `(label ,looplab)
                   `(movl ac t2)       ; t2=obj2
-                  (cg-alloc-pair      ; ac=(cons obj1 obj2)
+                  (cg-make-pair       ; ac=(cons obj1 obj2)
                     (instructions
                       `(movl t1 ac)
                       `(addl ,ws ac))
@@ -172,7 +172,7 @@
              (set! todo (cons (list codelab code) todo))
              (instructions
                `(comment "build-closure")
-               (cg-allocate (+ (length fvars) 2) 'ac fs '())
+               (cg-fix-allocate (+ (length fvars) 2) 'ac (cg-stacktop fs) '())
                `(movl ,(header (length fvars) closure-tag) (ac 0))
                `(movl (imm ,codelab) (ac ,(* 1 ws)))
                (let f ([ls fvars] [pos 2])
@@ -417,14 +417,14 @@
          `(movl (t1 ,(- (* 2 ws) pair-tag)) ac))]
       [(%cons)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
-         (cg-alloc-pair (cg-stacktop fs) '(t1 t2)
+         (cg-make-pair (cg-stacktop fs) '(t1 t2)
            (instructions
              `(movl t1 (ac ,(* 1 ws)))
              `(movl t2 (ac ,(* 2 ws))))))]
       [(%string->uninterned-symbol)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
-           (cg-allocate 2 'ac fs '(t1))
+           (cg-fix-allocate 2 'ac (cg-stacktop fs) '(t1))
            `(movl ,(header 1 symbol-tag) (ac 0))
            `(movl t1 (ac ,ws))
            (cg-type-tag symbol-tag 'ac)))]
@@ -432,7 +432,11 @@
        (cg-true-inline cg-rands rands fs dd cd nextlab
          (instructions
            `(comment "string")
-           (cg-allocate (+ (quotient (+ (length rands) (- ws 1)) ws) 1) 'ac (+ fs (* (length rands) ws)) '())
+           (cg-fix-allocate
+             (+ (quotient (+ (length rands) (- ws 1)) ws) 1)
+             'ac
+             (cg-stacktop (+ fs (* (length rands) ws))) 
+             '())
            `(movl ,(header (length rands) string-tag) (ac 0))
            (let loop ([fpos fs] [spos ws] [num (length rands)])
              (if (zero? num)
@@ -448,7 +452,11 @@
        (cg-true-inline cg-rands rands fs dd cd nextlab
          (instructions
            `(comment "vector")
-           (cg-allocate (+ (length rands) 1) 'ac (+ fs (* (length rands) ws)) '())
+           (cg-fix-allocate
+             (+ (length rands) 1)
+             'ac
+             (cg-stacktop (+ fs (* (length rands) ws)))
+             '())
            `(movl ,(header (length rands) vector-tag) (ac 0))
            (let loop ([fpos fs] [vpos 1] [num (length rands)])
              (if (zero? num)
@@ -478,6 +486,21 @@
              (instructions
                (cg-store 't3 dd)        ; why not?
                (cg-jump cd nextlab))))]
+      [(%make-u8vector)
+       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+         (instructions
+           `(sarl ,tag-len t1) ; in bytes
+           `(movl t1 t2)
+           ;; 8 byte alignment
+           `(addl ,(+ ws mask) t2)  ; header and padding
+           `(andl ,(not32 mask) t2)
+           (cg-allocate 't2 'ac (cg-stacktop fs) '())
+           ;; write header
+           ;; string-tag is substitute for u8vector-tag
+           `(sall ,(+ tag-len 1) t1)
+           `(orl ,(ash string-tag 1) t1)
+           `(movl t1 (ac 0))
+           (cg-type-tag string-tag 'ac)))]
 ;      [(foreign-call)
 ;       (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
 ;         (instructions
@@ -491,14 +514,6 @@
 ;           `(comment "end foreign-call")))]
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
-
-(define cg-alloc-pair
-  (lambda (frameinfocode usedregs buildcode)
-    (instructions
-      (cg-allocate-frameinfo 3 'ac frameinfocode usedregs)
-      `(movl ,(header 2 pair-tag) (ac 0))
-      buildcode
-      (cg-type-tag pair-tag 'ac))))
 
 (define cg-true-inline
   (lambda (rander rands fs dd cd nextlab code)
@@ -545,27 +560,35 @@
       `(movl fp ac)
       `(addl ,fs ac))))
 
-(define cg-allocate
-  (lambda (n target fs usedregs)
-    (cg-allocate-frameinfo n target (cg-stacktop fs) usedregs)))
+(define cg-make-pair
+  (lambda (frameinfocode usedregs buildcode)
+    (instructions
+      (cg-fix-allocate 3 'ac frameinfocode usedregs)
+      `(movl ,(header 2 pair-tag) (ac 0))
+      buildcode
+      (cg-type-tag pair-tag 'ac))))
 
-(define cg-allocate-frameinfo
+(define cg-fix-allocate
   (lambda (n target frameinfocode usedregs)
-    (letrec ([aligned (if (even? n) n (+ n 1))]
-             [allocate
-               (lambda (overflowcode)
-                 (let ([dontlab (gen-label "dontgc")])
-                   (instructions
-                     `(movl ap ,target)
-                     `(addl ,(* aligned ws) ap)
-                     `(cmpl _heap_end ap)
-                     `(jbe ,dontlab)
-                     overflowcode
-                     `(label ,dontlab))))])
+    (let ([aligned (if (even? n) n (+ n 1))])
+      (cg-allocate (* aligned ws) target frameinfocode usedregs))))
+
+(define cg-allocate
+  (lambda (sizecode target frameinfocode usedregs)
+    (let ([allocate
+            (lambda (overflowcode)
+              (let ([dontlab (gen-label "dontgc")])
+                (instructions
+                  `(movl ap ,target)
+                  `(addl ,sizecode ap)
+                  `(cmpl _heap_end ap)
+                  `(jbe ,dontlab)
+                  overflowcode
+                  `(label ,dontlab))))])
       (allocate
         (instructions
           `(comment "gc")
-          `(subl ,(* aligned ws) ap)  ; revert ap
+          `(subl ,sizecode ap)  ; revert ap
           `(pushl t3)
           `(pushl t2)
           `(pushl t1)

@@ -33,6 +33,8 @@
     (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
     (define make-u8vector (lambda (len) (%make-u8vector len)))
     (define u8vector-length (lambda (vec) (%u8vector-length vec)))
+    (define u8vector-ref (lambda (vec k) (%u8vector-ref vec k)))
+    (define u8vector-set! (lambda (vec k n) (%u8vector-set! vec k n)))
     (define apply (lambda (proc args) (%apply proc args)))
 
     (define caar (lambda (x) (car (car x))))

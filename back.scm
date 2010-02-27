@@ -509,6 +509,23 @@
            `(movl (t1 ,(- string-tag)) ac)
            `(sarl 1 ac) ; forward bit
            `(andl ,(not32 mask) ac)))]
+      [(%u8vector-ref)
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
+           `(sarl ,tag-len t2)
+           `(addl t2 t1)
+           `(movzbl (t1 ,(- ws string-tag)) ac)
+           `(sall ,tag-len ac)))]
+      [(%u8vector-set!)
+       (instructions
+         (cg-ternary-rands rands fs)
+         `(sarl ,tag-len t2)
+         `(addl t2 t1)
+         `(movl t3 t2)  ; t2=raw t3
+         `(sarl ,tag-len t2)
+         `(movb t2l (t1 ,(- ws string-tag)))
+         (cg-store 't3 dd)  ; not support 'effect'
+         (cg-jump cd nextlab))]
 ;      [(foreign-call)
 ;       (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
 ;         (instructions

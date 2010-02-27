@@ -10,7 +10,7 @@
      string
      vector %vector-ref
      %vector-set!
-     %make-u8vector
+     %make-u8vector %u8vector-length
      %apply))
 
 (define *keywords*

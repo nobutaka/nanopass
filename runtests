@@ -13,4 +13,5 @@
 (load "./tests-6.1-req.scm")
 (load "./tests-6.2-req.scm")
 (load "./tests-6.3-req.scm")
+(load "./tests-6.4-req.scm")
 (test-all)

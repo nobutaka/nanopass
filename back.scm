@@ -18,6 +18,8 @@
 
 (define imm-mask #b11111111)
 
+(define attr-len (+ tag-len 1))
+
 (define ws 4)
 
 (define encode
@@ -497,10 +499,16 @@
            (cg-allocate 't2 'ac (cg-stacktop fs) '())
            ;; write header
            ;; string-tag is substitute for u8vector-tag
-           `(sall ,(+ tag-len 1) t1)
+           `(sall ,attr-len t1)
            `(orl ,(ash string-tag 1) t1)
            `(movl t1 (ac 0))
            (cg-type-tag string-tag 'ac)))]
+      [(%u8vector-length)
+       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+         (instructions
+           `(movl (t1 ,(- string-tag)) ac)
+           `(sarl 1 ac) ; forward bit
+           `(andl ,(not32 mask) ac)))]
 ;      [(foreign-call)
 ;       (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
 ;         (instructions

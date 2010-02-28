@@ -45,3 +45,8 @@
   [(cddar (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "4\n"]
   [(cdddr (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "8\n"]
 )
+
+(add-tests-with-string-output "reverse"
+  [(reverse '(a b c d e)) => "(e d c b a)\n"]
+  [(reverse '()) => "()\n"]
+)

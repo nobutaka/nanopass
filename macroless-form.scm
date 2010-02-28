@@ -4,9 +4,14 @@
   '(
     (define-macro let
       (lambda (decls . bodies)
-        (let ([vars (map car decls)]
-              [vals (map cadr decls)])
-          `((lambda ,vars ,@bodies) ,@vals))))
+        (if (pair? decls)
+            (let ([vars (map car decls)]
+                  [vals (map cadr decls)])
+              `((lambda ,vars ,@bodies) ,@vals))
+            (let ([vars (map car (car bodies))]
+                  [vals (map cadr (car bodies))])
+              `(letrec ([,decls (lambda ,vars ,@(cdr bodies))])
+                 (,decls ,@vals))))))
 
     (define-macro letrec
       (lambda (decls . bodies)
@@ -28,13 +33,14 @@
     (define car (lambda (x) (%car x)))
     (define cdr (lambda (x) (%cdr x)))
     (define cons (lambda (x1 x2) (%cons x1 x2)))
+    (define null? (lambda (obj) (%null? obj)))
     (define string->uninterned-symbol (lambda (x) (%string->uninterned-symbol x)))
     (define vector-ref (lambda (v k) (%vector-ref v k)))
     (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
-    (define make-u8vector (lambda (len) (%make-u8vector len)))
-    (define u8vector-length (lambda (vec) (%u8vector-length vec)))
-    (define u8vector-ref (lambda (vec k) (%u8vector-ref vec k)))
-    (define u8vector-set! (lambda (vec k n) (%u8vector-set! vec k n)))
+    (define make-byte-string (lambda (k) (%make-byte-string k)))
+    (define string-size (lambda (str) (%string-size str)))
+    (define string-byte-ref (lambda (str k) (%string-byte-ref str k)))
+    (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
     (define apply (lambda (proc args) (%apply proc args)))
 
     (define caar (lambda (x) (car (car x))))
@@ -49,6 +55,13 @@
     (define cdadr (lambda (x) (cdr (car (cdr x)))))
     (define cddar (lambda (x) (cdr (cdr (car x)))))
     (define cdddr (lambda (x) (cdr (cdr (cdr x)))))
+
+    (define reverse
+      (lambda (ls)
+        (let loop ([ls ls] [a '()])
+          (if (null? ls)
+              a
+              (loop (cdr ls) (cons (car ls) a))))))
 ))
 
 (define append-library

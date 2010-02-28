@@ -6,11 +6,12 @@
 
 (define *prim-names*
   '(%eq? %fx+ %fx- %fl+ %car %cdr %cons
+     %null?
      %string->uninterned-symbol
      string
      vector %vector-ref
      %vector-set!
-     %make-u8vector %u8vector-length %u8vector-ref %u8vector-set!
+     %make-byte-string %string-size %string-byte-ref %string-byte-set!
      %apply))
 
 (define *keywords*

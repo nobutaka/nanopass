@@ -423,6 +423,8 @@
            (instructions
              `(movl t1 (ac ,(* 1 ws)))
              `(movl t2 (ac ,(* 2 ws))))))]
+      [(%null?)
+       (cg-type-test exp null-tag imm-mask rands fs dd cd nextlab)]
       [(%string->uninterned-symbol)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
@@ -488,7 +490,7 @@
              (instructions
                (cg-store 't3 dd)        ; why not?
                (cg-jump cd nextlab))))]
-      [(%make-u8vector)
+      [(%make-byte-string)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
            `(sarl ,tag-len t1) ; in bytes
@@ -498,25 +500,24 @@
            `(andl ,(not32 mask) t2)
            (cg-allocate 't2 'ac (cg-stacktop fs) '())
            ;; write header
-           ;; string-tag is substitute for u8vector-tag
            `(sall ,attr-len t1)
            `(orl ,(ash string-tag 1) t1)
            `(movl t1 (ac 0))
            (cg-type-tag string-tag 'ac)))]
-      [(%u8vector-length)
+      [(%string-size)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
            `(movl (t1 ,(- string-tag)) ac)
            `(sarl 1 ac) ; forward bit
            `(andl ,(not32 mask) ac)))]
-      [(%u8vector-ref)
+      [(%string-byte-ref)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
            `(sarl ,tag-len t2)
            `(addl t2 t1)
            `(movzbl (t1 ,(- ws string-tag)) ac)
            `(sall ,tag-len ac)))]
-      [(%u8vector-set!)
+      [(%string-byte-set!)
        (instructions
          (cg-ternary-rands rands fs)
          `(sarl ,tag-len t2)
@@ -570,6 +571,22 @@
                 (cg-binary-rands rands fs)
                 code
                 (cg-branch truelab falselab nextlab trueinst falseinst)))
+            (instructions
+              (cg-effect-rands rands fs)
+              (cg-jump cd nextlab)))
+        (cg `(if ,exp '#t '#f) fs dd cd nextlab))))
+
+(define cg-type-test
+  (lambda (exp tag mask rands fs dd cd nextlab)
+    (if (eq? dd 'effect)
+        (if (pair? cd)
+            (let ([truelab (car cd)]
+                  [falselab (cadr cd)])
+              (instructions
+                (cg-unary-rand rands fs)
+                `(andl ,mask t1)
+                `(cmpl ,tag t1)
+                (cg-branch truelab falselab nextlab 'je 'jne)))
             (instructions
               (cg-effect-rands rands fs)
               (cg-jump cd nextlab)))

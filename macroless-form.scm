@@ -68,6 +68,19 @@
           (if (null? ls)
               a
               (loop (cdr ls) (cons (car ls) a))))))
+
+    (define string->sz
+      (lambda (str)
+        (let* ([size (string-size str)]
+               [sz (make-byte-string (+ size 1))])
+          (let loop ([k 0])
+            (if (= k size)
+                (begin
+                  (string-byte-set! sz k 0)
+                  sz)
+                (begin
+                  (string-byte-set! sz k (string-byte-ref str k))
+                  (loop (+ k 1))))))))
 ))
 
 (define append-library

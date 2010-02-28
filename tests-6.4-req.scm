@@ -24,6 +24,7 @@
   [(let ([v (make-byte-string 1000)])
      (string-byte-set! v 500 12)
      (string-byte-ref v 500)) => "12\n"]
+  [(string->sz "abc") => "\"abc\\0\"\n"]
 )
 
 (add-tests-with-string-output "let*"

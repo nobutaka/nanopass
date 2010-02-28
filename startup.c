@@ -219,8 +219,13 @@ static void print_string(Ptr ptr)
     n = OBJLENGTH(ptr);
     s = STRINGDATA(ptr);
     while (n--) {
-        if (*s == '"' || *s == '\\') printf("\\");
-        printf("%c", *s++);
+        if (*s == 0) {
+            printf("\\0");
+        } else {
+            if (*s == '"' || *s == '\\') printf("\\");
+            printf("%c", *s);
+        }
+        s++;
     }
 }
 

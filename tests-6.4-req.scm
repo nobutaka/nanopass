@@ -25,3 +25,7 @@
      (string-byte-set! v 500 12)
      (string-byte-ref v 500)) => "12\n"]
 )
+
+(add-tests-with-string-output "let*"
+  [(let* ([a 100] [b a] [c (cons a b)]) c) => "(100 . 100)\n"]
+)

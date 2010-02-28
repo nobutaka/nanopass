@@ -13,6 +13,12 @@
               `(letrec ([,decls (lambda ,vars ,@(cdr bodies))])
                  (,decls ,@vals))))))
 
+    (define-macro let*
+      (lambda (decls . bodies)
+        (if (null? (cdr decls))
+            `(let (,(car decls)) ,@bodies)
+            `(let (,(car decls)) (let* ,(cdr decls) ,@bodies)))))
+
     (define-macro letrec
       (lambda (decls . bodies)
         (let ([vars (map car decls)]

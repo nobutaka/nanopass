@@ -47,6 +47,7 @@
     (define string-size (lambda (str) (%string-size str)))
     (define string-byte-ref (lambda (str k) (%string-byte-ref str k)))
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
+    (define dlsym (lambda (sz) (%dlsym sz)))
     (define apply (lambda (proc args) (%apply proc args)))
 
     (define caar (lambda (x) (car (car x))))

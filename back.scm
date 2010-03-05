@@ -527,17 +527,19 @@
          `(movb t2l (t1 ,(- ws string-tag)))
          (cg-store 't3 dd)  ; not support 'effect'
          (cg-jump cd nextlab))]
-;      [(foreign-call)
-;       (cg-ref-inline cg-rands rands fs dd cd nextlab ; TODO: cg-rands only pushes value to scheme stack.
-;         (instructions
-;           `(comment "foreign-call")
-;           `(pushl 3)
-;           `(pushl 2)
-;           `(pushl 1)
-;           `(pushl sp)
-;           `(call foreign_call)
-;           `(addl ,(* 4 ws) sp)
-;           `(comment "end foreign-call")))]
+      [(%dlsym)
+       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+         (instructions
+           `(addl ,(- ws string-tag) t1)  ; no need to protect t1
+           (cg-align-c-stack ws)
+           `(pushl t1)
+           `(call _dlsym_subr)
+           `(addl ,(* 4 ws) sp)           ; pop 16 bytes
+           `(movl ac t1)
+           (cg-fix-allocate 2 'ac (cg-stacktop fs) '())
+           `(movl ,(header 4 string-tag) (ac 0))
+           `(movl t1 (ac ,ws))
+           (cg-type-tag string-tag 'ac)))]
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
 
@@ -641,11 +643,10 @@
           `(pushl ac)           ; push stack top
           `(pushl ,(encode-regs usedregs))
           `(movl sp ac)
-          `(subl ,(* 3 ws) sp)  ; padding bytes for OS X
-                                ; 8 words struct + 3 paddings + 1 pointer = 12 words
+          (cg-align-c-stack (* 9 ws)) ; 8 words struct + 1 pointer
           `(pushl ac)
           `(call _gc_collect)
-          `(addl ,(* 6 ws) sp)  ; skip pointer, paddings, usedregs, stack_top
+          `(addl ,(* 6 ws) sp)  ; pop 24 bytes for pointer, paddings, usedregs, stack_top
           `(popl cp)
           `(popl ap)
           `(popl ac)
@@ -654,6 +655,10 @@
           `(popl t3)
           (allocate faultcode)  ; No more memory.
           `(comment "end gc"))))))
+
+(define cg-align-c-stack
+  (lambda (fs)  ; frame size of c stack
+    `(subl ,(- 16 (remainder fs 16)) sp)))  ; padding bytes for OS X
 
 (define faultcode
   (instructions

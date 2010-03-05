@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dlfcn.h>
 
 typedef long Ptr;
 
@@ -78,6 +79,8 @@ static char *gc_cur_space;
 static char *gc_to_space;
 static char *gc_scan;
 static char *gc_free;
+
+static void *rtldDefault = 0;
 
 static void error_exit(const char *fmt, ...)
 {
@@ -212,6 +215,8 @@ void gc_collect(struct RootSet *root)
     memset(gc_to_space, 0xfd, gc_space_size);
 }
 
+void *dlsym_subr(const char* symbol) { return dlsym(rtldDefault, symbol); }
+
 static void print_string(Ptr ptr)
 {
     int n;
@@ -314,6 +319,8 @@ int main(int argc, char *argv[])
     stack_bottom = malloc(default_stack_size);
     memset(stack_bottom, 0xcc, default_stack_size);
     gc_initialize(default_heap_size);
+
+    rtldDefault = dlopen(0, RTLD_NOW | RTLD_GLOBAL);
 
     print(call_scheme(stack_bottom, gc_cur_space));
 

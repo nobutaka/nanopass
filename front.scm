@@ -12,6 +12,7 @@
      vector %vector-ref
      %vector-set!
      %make-byte-string %string-size %string-byte-ref %string-byte-set!
+     %string-fx-ref %string-fx-set!
      %dlsym %foreign-call
      %apply))
 

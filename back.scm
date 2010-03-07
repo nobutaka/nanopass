@@ -385,6 +385,7 @@
           `(movl (fp ,(+ fs (* 1 ws))) t2)
           `(movl (fp ,fs) t1))))))
 
+;; Some set procedures don't support 'effect'.
 (define cg-inline
   (lambda (exp name rands fs dd cd nextlab)
     (case name
@@ -511,22 +512,25 @@
            `(sarl 1 ac) ; forward bit
            `(andl ,(not32 mask) ac)))]
       [(%string-byte-ref)
-       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+       (cg-string-ref rands fs dd cd nextlab
          (instructions
-           `(sarl ,tag-len t2)
-           `(addl t2 t1)
            `(movzbl (t1 ,(- ws string-tag)) ac)
            `(sall ,tag-len ac)))]
       [(%string-byte-set!)
-       (instructions
-         (cg-ternary-rands rands fs)
-         `(sarl ,tag-len t2)
-         `(addl t2 t1)
-         `(movl t3 t2)  ; t2=raw t3
-         `(sarl ,tag-len t2)
-         `(movb t2l (t1 ,(- ws string-tag)))
-         (cg-store 't3 dd)  ; not support 'effect'
-         (cg-jump cd nextlab))]
+       (cg-string-set rands fs dd cd nextlab
+         (instructions
+           `(sarl ,tag-len t2)
+           `(movb t2l (t1 ,(- ws string-tag)))))]
+      [(%string-fx-ref)
+       (cg-string-ref rands fs dd cd nextlab
+         (instructions
+           `(movl (t1 ,(- ws string-tag)) ac)
+           `(sall ,tag-len ac)))]
+      [(%string-fx-set!)
+       (cg-string-set rands fs dd cd nextlab
+         (instructions
+           `(sarl ,tag-len t2)
+           `(movl t2 (t1 ,(- ws string-tag)))))]
       [(%dlsym)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
@@ -542,7 +546,7 @@
            ;; t1=fptr, t2=args, t3=size
            `(movl t1 ac)  ; ac=fptr
            `(movl sp t1)  ; t1=sp save stack pointer
-           ;; add padding bytes
+           ;; add padding bytes for OS X
            `(sarl 1 t3)
            `(addl 15 t3)
            `(notl t3)
@@ -562,11 +566,11 @@
                  `(movl (t2 ,(- ws pair-tag)) t3) ; t3=inner pair
                  `(cmpl ,(encode 0) (t3 ,(- ws pair-tag)))
                  `(jne ,arraylab)
-                 ;; c-int
+                 ;; int
                  set-t3-to-cdr            ; t3=cdr
                  `(pushl (t3 ,(- ws string-tag)))
                  set-t2-to-cdr-then-loop  ; t2=cdr
-                 ;; c-array
+                 ;; array
                  `(label ,arraylab)
                  set-t3-to-cdr            ; t3=cdr
                  `(addl ,(- ws string-tag) t3)
@@ -578,6 +582,25 @@
            (cg-retval-to-string4 fs)))]
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
+
+(define cg-string-set
+  (lambda (rands fs dd cd nextlab storecode)
+    (instructions
+      (cg-ternary-rands rands fs)
+      `(sarl ,tag-len t2)
+      `(addl t2 t1)
+      `(movl t3 t2) ; t2=t3 storecode use only t2
+      storecode
+      (cg-store 't3 dd)
+      (cg-jump cd nextlab))))
+
+(define cg-string-ref
+  (lambda (rands fs dd cd nextlab loadcode)
+    (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+      (instructions
+        `(sarl ,tag-len t2)
+        `(addl t2 t1)
+        loadcode))))
 
 (define cg-retval-to-string4
   (lambda (fs)
@@ -702,7 +725,7 @@
           `(comment "end gc"))))))
 
 (define cg-align-c-stack
-  (lambda (fs)  ; frame size of c stack
+  (lambda (fs)  ; frame size of c-stack
     `(subl ,(- 16 (remainder fs 16)) sp)))  ; padding bytes for OS X
 
 (define faultcode

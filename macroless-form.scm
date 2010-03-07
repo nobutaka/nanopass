@@ -47,6 +47,8 @@
     (define string-size (lambda (str) (%string-size str)))
     (define string-byte-ref (lambda (str k) (%string-byte-ref str k)))
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
+    (define string-fx-ref (lambda (str k) (%string-fx-ref str k)))
+    (define string-fx-set! (lambda (str k n) (%string-fx-set! str k n)))
     (define dlsym (lambda (sz) (%dlsym sz)))
     (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
     (define apply (lambda (proc args) (%apply proc args)))

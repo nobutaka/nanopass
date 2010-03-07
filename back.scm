@@ -495,7 +495,7 @@
          (instructions
            `(sarl ,tag-len t1) ; in bytes
            `(movl t1 t2)
-           ;; 8 byte alignment
+           ;; 8-byte alignment
            `(addl ,(+ ws mask) t2)  ; header and padding
            `(andl ,(not32 mask) t2)
            (cg-allocate 't2 'ac (cg-stacktop fs) '())
@@ -535,13 +535,58 @@
            `(pushl t1)
            `(call _dlsym_subr)
            `(addl ,(* 4 ws) sp)           ; pop 16 bytes
-           `(movl ac t1)
-           (cg-fix-allocate 2 'ac (cg-stacktop fs) '())
-           `(movl ,(header 4 string-tag) (ac 0))
-           `(movl t1 (ac ,ws))
-           (cg-type-tag string-tag 'ac)))]
+           (cg-retval-to-string4 fs)))]
+      [(%foreign-call)
+       (cg-true-inline cg-ternary-rands rands fs dd cd nextlab
+         (instructions
+           ;; t1=fptr, t2=args, t3=size
+           `(movl t1 ac)  ; ac=fptr
+           `(movl sp t1)  ; t1=sp save stack pointer
+           ;; add padding bytes
+           `(sarl 1 t3)
+           `(addl 15 t3)
+           `(notl t3)
+           `(andl 15 t3)
+           `(subl t3 sp)
+           ;; push arguments to c stack
+           (let ([looplab (gen-label "ffloop")]
+                 [breaklab (gen-label "ffbreak")]
+                 [arraylab (gen-label "ffarray")]
+                 [set-t3-to-cdr `(movl (t3 ,(- (* 2 ws) pair-tag)) t3)]
+                 [set-t2-to-cdr `(movl (t2 ,(- (* 2 ws) pair-tag)) t2)])
+             (let ([set-t2-to-cdr-then-loop (instructions set-t2-to-cdr `(jmp ,looplab))])
+               (instructions
+                 `(label ,looplab)
+                 `(cmpl ,(encode '()) t2)
+                 `(je ,breaklab)
+                 `(movl (t2 ,(- ws pair-tag)) t3) ; t3=inner pair
+                 `(cmpl ,(encode 0) (t3 ,(- ws pair-tag)))
+                 `(jne ,arraylab)
+                 ;; c-int
+                 set-t3-to-cdr            ; t3=cdr
+                 `(pushl (t3 ,(- ws string-tag)))
+                 set-t2-to-cdr-then-loop  ; t2=cdr
+                 ;; c-array
+                 `(label ,arraylab)
+                 set-t3-to-cdr            ; t3=cdr
+                 `(addl ,(- ws string-tag) t3)
+                 `(pushl t3)
+                 set-t2-to-cdr-then-loop  ; t2=cdr
+                 `(label ,breaklab))))
+           `(call (near (ac ,(- ws string-tag))))
+           `(movl t1 sp)
+           (cg-retval-to-string4 fs)))]
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
+
+(define cg-retval-to-string4
+  (lambda (fs)
+    (instructions
+      `(movl ac t1)
+      (cg-fix-allocate 2 'ac (cg-stacktop fs) '())
+      `(movl ,(header 4 string-tag) (ac 0))
+      `(movl t1 (ac ,ws))
+      (cg-type-tag string-tag 'ac))))
 
 (define cg-true-inline
   (lambda (rander rands fs dd cd nextlab code)

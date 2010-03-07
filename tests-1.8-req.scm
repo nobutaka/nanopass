@@ -46,7 +46,21 @@
   [(cdddr (cons (cons (cons 1 2) (cons 3 4)) (cons (cons 5 6) (cons 7 8)))) => "8\n"]
 )
 
+(add-tests-with-string-output "list"
+  [(list 1 2 3) => "(1 2 3)\n"]
+  [(list) => "()\n"]
+)
+
 (add-tests-with-string-output "reverse"
   [(reverse '(a b c d e)) => "(e d c b a)\n"]
   [(reverse '()) => "()\n"]
+)
+
+(add-tests-with-string-output "length"
+  [(length '()) => "0\n"]
+  [(length '(1)) => "1\n"]
+  [(length '(1 2)) => "2\n"]
+  [(length '(1 2 3)) => "3\n"]
+  [(length (cons 1 '())) => "1\n"]
+  [(length '(1 (2 3))) => "2\n"]
 )

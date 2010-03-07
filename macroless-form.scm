@@ -48,6 +48,7 @@
     (define string-byte-ref (lambda (str k) (%string-byte-ref str k)))
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
     (define dlsym (lambda (sz) (%dlsym sz)))
+    (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
     (define apply (lambda (proc args) (%apply proc args)))
 
     (define caar (lambda (x) (car (car x))))
@@ -63,12 +64,20 @@
     (define cddar (lambda (x) (cdr (cdr (car x)))))
     (define cdddr (lambda (x) (cdr (cdr (cdr x)))))
 
+    (define list (lambda x x))
+
     (define reverse
       (lambda (ls)
         (let loop ([ls ls] [a '()])
           (if (null? ls)
               a
               (loop (cdr ls) (cons (car ls) a))))))
+
+    (define length
+      (lambda (ls)
+        (if (null? ls)
+            0
+            (+ 1 (length (cdr ls))))))
 
     (define string->sz
       (lambda (str)

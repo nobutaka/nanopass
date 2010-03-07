@@ -93,6 +93,19 @@
                 (begin
                   (string-byte-set! sz k (string-byte-ref str k))
                   (loop (+ k 1))))))))
+
+    (define fx->string4
+      (lambda (n)
+        (let ([str (make-byte-string 4)])
+          (string-fx-set! str 0 n)
+          str)))
+
+    (define string4->fx
+      (lambda (str)
+        (string-fx-ref str 0)))
+
+    (define int-tag 0)
+    (define array-tag 1)
 ))
 
 (define append-library

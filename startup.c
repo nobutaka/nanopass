@@ -218,6 +218,7 @@ void gc_collect(struct RootSet *root)
 void *dlsym_subr(const char* symbol) { return dlsym(rtldDefault, symbol); }
 
 int a_minus_b(int a, int b) { return a-b; }
+int get_byte(char* data, int k) { return data[k]; }
 
 static void print_string(Ptr ptr)
 {

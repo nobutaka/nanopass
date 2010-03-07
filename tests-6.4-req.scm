@@ -38,6 +38,7 @@
   [(let ([s (make-byte-string 4)])
      (string-fx-set! s 0 61183) ; 0xeeff
      (list (string-byte-ref s 0) (string-byte-ref s 1))) => "(255 238)\n"]  ; 0xff 0xee
+  [(string4->fx (fx->string4 12)) => "12\n"]
 )
 
 (add-tests-with-string-output "let*"

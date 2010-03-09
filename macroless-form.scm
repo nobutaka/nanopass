@@ -44,6 +44,7 @@
     (define vector-ref (lambda (v k) (%vector-ref v k)))
     (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
     (define make-byte-string (lambda (k) (%make-byte-string k)))
+    (define mutate-to-string4! (lambda (str) (%mutate-to-string4! str)))
     (define string-size (lambda (str) (%string-size str)))
     (define string-byte-ref (lambda (str k) (%string-byte-ref str k)))
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
@@ -98,14 +99,12 @@
       (lambda (n)
         (let ([str (make-byte-string 4)])
           (string-fx-set! str 0 n)
+          (mutate-to-string4! str)
           str)))
 
     (define string4->fx
       (lambda (str)
         (string-fx-ref str 0)))
-
-    (define int-tag 0)
-    (define array-tag 1)
 ))
 
 (define append-library

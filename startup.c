@@ -22,7 +22,7 @@ struct RootSet {
 #define number_tag  0
 #define immed_tag   1
 #define pair_tag    2
-#define string_tag  3
+#define string_tag  3   /* It is a variety of string if tag is string and objtag is number. */
 #define symbol_tag  4
 #define vector_tag  5
 #define proc_tag    6
@@ -98,7 +98,7 @@ static unsigned int object_size(Ptr *obj)
     unsigned int tag = OBJTAG(obj);
     unsigned int len = OBJLENGTH(obj);
     unsigned int full_len = 1;
-    if (tag == string_tag) {
+    if (tag == string_tag || tag == number_tag) {
         full_len += ((len+3) / 4);
     } else if (tag == proc_tag) {
         full_len += 1+len;
@@ -183,7 +183,6 @@ void gc_collect(struct RootSet *root)
     while (gc_scan < gc_free) {
         Ptr *obj = OBJ(gc_scan);
         switch (OBJTAG(obj)) {
-        case number_tag:
         case immed_tag:
         case float_tag:
             error_exit("scan incorrect, unboxed type.\n");
@@ -201,6 +200,7 @@ void gc_collect(struct RootSet *root)
                 gc_scan += align(offset + len) * ws;
                 break;
             }
+        case number_tag:
         case string_tag:
             gc_scan += object_size(obj);
             break;

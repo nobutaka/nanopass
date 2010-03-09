@@ -1,6 +1,7 @@
 (use binary.io)
 (use gauche.uvector)
 
+(define number-tag  #b000)
 (define pair-tag    #b010)
 (define string-tag  #b011)
 (define symbol-tag  #b100)
@@ -17,6 +18,8 @@
 (define char-tag #b00010001)
 
 (define imm-mask #b11111111)
+
+(define attr-mask #b1111)
 
 (define attr-len (+ tag-len 1))
 
@@ -505,6 +508,14 @@
            `(orl ,(ash string-tag 1) t1)
            `(movl t1 (ac 0))
            (cg-type-tag string-tag 'ac)))]
+      [(%mutate-to-string4!)
+       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+         (instructions
+           `(movl t1 ac)
+           `(movl (t1 ,(- string-tag)) t2)
+           `(andl ,(not32 attr-mask) t2)
+           `(orl ,(ash number-tag 1) t2)
+           `(movl t2 (t1 ,(- string-tag)))))]
       [(%string-size)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
@@ -555,24 +566,26 @@
            ;; push arguments to c stack
            (let ([looplab (gen-label "ffloop")]
                  [breaklab (gen-label "ffbreak")]
-                 [arraylab (gen-label "ffarray")]
-                 [set-t3-to-cdr `(movl (t3 ,(- (* 2 ws) pair-tag)) t3)]
+                 [stringlab (gen-label "ffstring")]
+                 [set-t3-to-car `(movl (t2 ,(- ws pair-tag)) t3)]
                  [set-t2-to-cdr `(movl (t2 ,(- (* 2 ws) pair-tag)) t2)])
              (let ([set-t2-to-cdr-then-loop (instructions set-t2-to-cdr `(jmp ,looplab))])
                (instructions
                  `(label ,looplab)
                  `(cmpl ,(encode '()) t2)
                  `(je ,breaklab)
-                 `(movl (t2 ,(- ws pair-tag)) t3) ; t3=inner pair
-                 `(cmpl ,(encode 0) (t3 ,(- ws pair-tag)))
-                 `(jne ,arraylab)
-                 ;; int
-                 set-t3-to-cdr            ; t3=cdr
+                 set-t3-to-car                    ; t3=car
+                 `(movl (t3 ,(- string-tag)) t3)  ; t3=object header
+                 `(andl ,(ash mask 1) t3)
+                 `(cmpl 0 t3)
+                 `(jne ,stringlab)
+                 ;; string4
+                 set-t3-to-car            ; t3=car
                  `(pushl (t3 ,(- ws string-tag)))
                  set-t2-to-cdr-then-loop  ; t2=cdr
-                 ;; array
-                 `(label ,arraylab)
-                 set-t3-to-cdr            ; t3=cdr
+                 ;; string
+                 `(label ,stringlab)
+                 set-t3-to-car            ; t3=car
                  `(addl ,(- ws string-tag) t3)
                  `(pushl t3)
                  set-t2-to-cdr-then-loop  ; t2=cdr
@@ -607,7 +620,7 @@
     (instructions
       `(movl ac t1)
       (cg-fix-allocate 2 'ac (cg-stacktop fs) '())
-      `(movl ,(header 4 string-tag) (ac 0))
+      `(movl ,(header 4 number-tag) (ac 0))
       `(movl t1 (ac ,ws))
       (cg-type-tag string-tag 'ac))))
 

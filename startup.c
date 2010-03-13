@@ -22,7 +22,7 @@ struct RootSet {
 #define number_tag  0
 #define immed_tag   1
 #define pair_tag    2
-#define string_tag  3   /* It is a variety of string if tag is string and objtag is number. */
+#define string_tag  3   /* It is a variety of string if tag is string and object tag is number. */
 #define symbol_tag  4
 #define vector_tag  5
 #define proc_tag    6
@@ -217,6 +217,7 @@ void gc_collect(struct RootSet *root)
 
 void *dlsym_subr(const char* symbol) { return dlsym(rtldDefault, symbol); }
 
+int twelve() { return 12; }
 int a_minus_b(int a, int b) { return a-b; }
 int get_byte(char* data, int k) { return data[k]; }
 

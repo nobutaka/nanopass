@@ -456,6 +456,8 @@
                    (loop (+ fpos ws) (+ spos 1) (- num 1)))))
            (cg-type-tag string-tag 'ac)
            `(comment "end string")))]
+      [(%string?)
+       (cg-type-test exp string-tag mask rands fs dd cd nextlab)]
       [(vector)
        (cg-true-inline cg-rands rands fs dd cd nextlab
          (instructions
@@ -542,6 +544,14 @@
          (instructions
            `(sarl ,tag-len t2)
            `(movl t2 (t1 ,(- ws string-tag)))))]
+      [(%object-tag)
+       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+         (instructions
+           `(andl ,(not32 mask) t1)
+           `(movl (t1 0) ac)
+           `(sarl 1 ac) ; forward bit
+           `(andl ,mask ac)
+           `(sall ,tag-len ac)))]
       [(%dlsym)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions

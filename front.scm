@@ -9,10 +9,12 @@
      %null?
      %string->uninterned-symbol
      string
+     %string?
      vector %vector-ref
      %vector-set!
      %make-byte-string %mutate-to-string4! %string-size %string-byte-ref %string-byte-set!
      %string-fx-ref %string-fx-set!
+     %object-tag
      %dlsym %foreign-call
      %apply))
 

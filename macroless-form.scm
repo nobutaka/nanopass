@@ -27,6 +27,8 @@
                 [assigns (map (lambda (v e) `(set! ,v ,e)) vars vals)])
             `((lambda ,vars ,@assigns ,@bodies) ,@holders)))))
 
+    (define number-tag 0)
+
     ;; wraps primitives
     (define eq? (lambda (x1 x2) (%eq? x1 x2)))
     (define fx+ (lambda (x1 x2) (%fx+ x1 x2)))
@@ -41,6 +43,7 @@
     (define cons (lambda (x1 x2) (%cons x1 x2)))
     (define null? (lambda (obj) (%null? obj)))
     (define string->uninterned-symbol (lambda (x) (%string->uninterned-symbol x)))
+    (define string? (lambda (obj) (%string? obj)))
     (define vector-ref (lambda (v k) (%vector-ref v k)))
     (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
     (define make-byte-string (lambda (k) (%make-byte-string k)))
@@ -50,6 +53,7 @@
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
     (define string-fx-ref (lambda (str k) (%string-fx-ref str k)))
     (define string-fx-set! (lambda (str k n) (%string-fx-set! str k n)))
+    (define object-tag (lambda (obj) (%object-tag obj)))
     (define dlsym (lambda (sz) (%dlsym sz)))
     (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
     (define apply (lambda (proc args) (%apply proc args)))
@@ -94,6 +98,12 @@
                 (begin
                   (string-byte-set! sz k (string-byte-ref str k))
                   (loop (+ k 1))))))))
+
+    (define string4?
+      (lambda (obj)
+        (if (string? obj)
+            (= (object-tag obj) number-tag)
+            #f)))
 
     (define fx->string4
       (lambda (n)

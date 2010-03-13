@@ -38,7 +38,19 @@
   [(let ([s (make-byte-string 4)])
      (string-fx-set! s 0 61183) ; 0xeeff
      (list (string-byte-ref s 0) (string-byte-ref s 1))) => "(255 238)\n"]  ; 0xff 0xee
+)
+
+(add-tests-with-string-output "string4"
   [(string4->fx (fx->string4 12)) => "12\n"]
+  [(string4? 0) => "#f\n"]
+  [(string4? #f) => "#f\n"]
+  [(string4? '()) => "#f\n"]
+  [(string4? "s") => "#f\n"]
+  [(string4? (make-byte-string 4)) => "#f\n"]
+  [(let ([s (make-byte-string 4)])
+     (mutate-to-string4! s)
+     (string4? s)) => "#t\n"]
+  [(string4? (fx->string4 12)) => "#t\n"]
 )
 
 (add-tests-with-string-output "let*"

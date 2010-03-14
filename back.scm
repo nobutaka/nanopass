@@ -19,6 +19,9 @@
 
 (define imm-mask #b11111111)
 
+(define string4-tag     #b000)
+(define bytevector-tag  #b001)
+
 (define attr-mask #b1111)
 
 (define attr-len (+ tag-len 1))
@@ -395,6 +398,8 @@
       [(%eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
          `(cmpl t1 t2))]
+      [(%fixnum?)
+       (cg-type-test exp number-tag mask rands fs dd cd nextlab)]
       [(%fx+)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
@@ -510,14 +515,6 @@
            `(orl ,(ash string-tag 1) t1)
            `(movl t1 (ac 0))
            (cg-type-tag string-tag 'ac)))]
-      [(%mutate-to-string4!)
-       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
-         (instructions
-           `(movl t1 ac)
-           `(movl (t1 ,(- string-tag)) t2)
-           `(andl ,(not32 attr-mask) t2)
-           `(orl ,(ash number-tag 1) t2)
-           `(movl t2 (t1 ,(- string-tag)))))]
       [(%string-size)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
@@ -544,7 +541,20 @@
          (instructions
            `(sarl ,tag-len t2)
            `(movl t2 (t1 ,(- ws string-tag)))))]
-      [(%object-tag)
+      [(%object-tag-set!)
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
+           `(movl t2 ac)
+           `(sarl ,tag-len t2)
+           `(andl ,mask t2)   ; t2=raw integer
+           `(andl ,(not32 mask) t1)
+           `(movl (t1 0) t3)  ; t3=header
+           `(sarl 1 t3) ; forward bit
+           `(andl ,(not32 mask) t3) ; remove tag
+           `(orl t2 t3)
+           `(sall 1 t3) ; forward bit
+           `(movl t3 (t1 0))))]
+      [(%object-tag-ref)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
            `(andl ,(not32 mask) t1)
@@ -576,7 +586,7 @@
            ;; push arguments to c stack
            (let ([looplab (gen-label "ffloop")]
                  [breaklab (gen-label "ffbreak")]
-                 [stringlab (gen-label "ffstring")]
+                 [elselab (gen-label "ffelse")]
                  [set-t3-to-car `(movl (t2 ,(- ws pair-tag)) t3)]
                  [set-t2-to-cdr `(movl (t2 ,(- (* 2 ws) pair-tag)) t2)])
              (let ([set-t2-to-cdr-then-loop (instructions set-t2-to-cdr `(jmp ,looplab))])
@@ -587,14 +597,14 @@
                  set-t3-to-car                    ; t3=car
                  `(movl (t3 ,(- string-tag)) t3)  ; t3=object header
                  `(andl ,(ash mask 1) t3)
-                 `(cmpl 0 t3)
-                 `(jne ,stringlab)
+                 `(cmpl ,string4-tag t3)
+                 `(jne ,elselab)
                  ;; string4
                  set-t3-to-car            ; t3=car
                  `(pushl (t3 ,(- ws string-tag)))
                  set-t2-to-cdr-then-loop  ; t2=cdr
-                 ;; string
-                 `(label ,stringlab)
+                 ;; else
+                 `(label ,elselab)
                  set-t3-to-car            ; t3=car
                  `(addl ,(- ws string-tag) t3)
                  `(pushl t3)
@@ -630,7 +640,7 @@
     (instructions
       `(movl ac t1)
       (cg-fix-allocate 2 'ac (cg-stacktop fs) '())
-      `(movl ,(header 4 number-tag) (ac 0))
+      `(movl ,(header 4 string4-tag) (ac 0))
       `(movl t1 (ac ,ws))
       (cg-type-tag string-tag 'ac))))
 

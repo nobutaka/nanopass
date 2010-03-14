@@ -27,10 +27,25 @@
                 [assigns (map (lambda (v e) `(set! ,v ,e)) vars vals)])
             `((lambda ,vars ,@assigns ,@bodies) ,@holders)))))
 
-    (define number-tag 0)
+    (define-macro cond
+      (lambda args
+        (if (null? args)
+            #f
+            (if (eq? (caar args) 'else)
+                `(begin ,@(cdar args))
+                (if (null? (cdar args))
+                    `(let ([+value+ ,(caar args)])
+                       (if +value+ +value+ (cond ,@(cdr args))))
+                    `(if ,(caar args)
+                         (begin ,@(cdar args))
+                         (cond ,@(cdr args))))))))
+
+    (define string4-tag     0)
+    (define bytevector-tag  1)
 
     ;; wraps primitives
     (define eq? (lambda (x1 x2) (%eq? x1 x2)))
+    (define fixnum? (lambda (obj) (%fixnum? obj)))
     (define fx+ (lambda (x1 x2) (%fx+ x1 x2)))
     (define fx- (lambda (x1 x2) (%fx- x1 x2)))
     (define fx= eq?)
@@ -47,13 +62,13 @@
     (define vector-ref (lambda (v k) (%vector-ref v k)))
     (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
     (define make-byte-string (lambda (k) (%make-byte-string k)))
-    (define mutate-to-string4! (lambda (str) (%mutate-to-string4! str)))
     (define string-size (lambda (str) (%string-size str)))
     (define string-byte-ref (lambda (str k) (%string-byte-ref str k)))
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
     (define string-fx-ref (lambda (str k) (%string-fx-ref str k)))
     (define string-fx-set! (lambda (str k n) (%string-fx-set! str k n)))
-    (define object-tag (lambda (obj) (%object-tag obj)))
+    (define object-tag-set! (lambda (obj tag) (%object-tag-set! obj tag)))
+    (define object-tag-ref (lambda (obj) (%object-tag-ref obj)))
     (define dlsym (lambda (sz) (%dlsym sz)))
     (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
     (define apply (lambda (proc args) (%apply proc args)))
@@ -73,18 +88,24 @@
 
     (define list (lambda x x))
 
+    (define length
+      (lambda (ls)
+        (if (null? ls)
+            0
+            (+ 1 (length (cdr ls))))))
+
+    (define map
+      (lambda (proc ls)
+        (if (null? ls)
+            '()
+            (cons (proc (car ls)) (map proc (cdr ls))))))
+
     (define reverse
       (lambda (ls)
         (let loop ([ls ls] [a '()])
           (if (null? ls)
               a
               (loop (cdr ls) (cons (car ls) a))))))
-
-    (define length
-      (lambda (ls)
-        (if (null? ls)
-            0
-            (+ 1 (length (cdr ls))))))
 
     (define string->sz
       (lambda (str)
@@ -99,11 +120,33 @@
                   (string-byte-set! sz k (string-byte-ref str k))
                   (loop (+ k 1))))))))
 
+    (define mutate-to-string4!
+      (lambda (str)
+        (object-tag-set! str string4-tag)))
+
+    (define mutate-to-bytevector!
+      (lambda (str)
+        (object-tag-set! str bytevector-tag)))
+
+    (define mutated-string?
+      (lambda (obj tag)
+        (if (string? obj)
+            (= (object-tag-ref obj) tag)
+            #f)))
+
     (define string4?
       (lambda (obj)
-        (if (string? obj)
-            (= (object-tag obj) number-tag)
-            #f)))
+        (mutated-string? obj string4-tag)))
+
+    (define bytevector?
+      (lambda (obj)
+        (mutated-string? obj bytevector-tag)))
+
+    (define make-bytevector
+      (lambda (k)
+        (let ([str (make-byte-string k)])
+          (mutate-to-bytevector! str)
+          str)))
 
     (define fx->string4
       (lambda (n)
@@ -115,6 +158,23 @@
     (define string4->fx
       (lambda (str)
         (string-fx-ref str 0)))
+
+    (define cproc
+      (lambda (return-type name)
+        (let ([fptr (dlsym (string->sz name))]
+              [convert-return-value (cond [(eq? return-type 'fixnum) string4->fx]
+                                          [(eq? return-type 'void) (lambda (x) #f)]
+                                          [else (lambda (x) x)])])
+          (lambda args
+            (let ([converted-args
+                    (map (lambda (x)
+                           (cond [(string4? x) x]
+                                 [(bytevector? x) x]
+                                 [(string? x) (string->sz x)]
+                                 [(fixnum? x) (fx->string4 x)]
+                                 [else (fx->string4 0)]))
+                         args)])
+              (convert-return-value (foreign-call fptr (reverse converted-args) (length converted-args))))))))
 ))
 
 (define append-library

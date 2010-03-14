@@ -29,4 +29,16 @@
          [open-args (list (string->sz "./data.txt") (string->sz "r"))])
      (let ([fp (foreign-call fopen (reverse open-args) (length open-args))])
        (string4->fx (foreign-call fgetc (list fp) 1)))) => "97\n"]
+  [(let ([a_minus_b (cproc 'fixnum "a_minus_b")])
+     (a_minus_b 8 5)) => "3\n"]
+  [(let ([data (make-bytevector 5)])
+     (string-byte-set! data 4 12)
+     (let ([get_byte (cproc 'fixnum "get_byte")])
+       (get_byte data 4))) => "12\n"]
+  [(let ([fopen (cproc 'void* "fopen")]
+         [fgetc (cproc 'fixnum "fgetc")])
+     (let ([fp (fopen "./data.txt" "r")])
+       (fgetc fp))) => "97\n"]
+  [(let ([printf (cproc 'fixnum "printf")])
+     (printf "abc %d %s\n" 12 "def")) => "abc 12 def\n11\n"]
 )

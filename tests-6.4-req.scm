@@ -53,6 +53,15 @@
   [(string4? (fx->string4 12)) => "#t\n"]
 )
 
+(add-tests-with-string-output "bytevector"
+  [(bytevector? 0) => "#f\n"]
+  [(bytevector? #f) => "#f\n"]
+  [(bytevector? '()) => "#f\n"]
+  [(bytevector? "s") => "#f\n"]
+  [(bytevector? (make-byte-string 1)) => "#f\n"]
+  [(bytevector? (make-bytevector 1)) => "#t\n"]
+)
+
 (add-tests-with-string-output "let*"
   [(let* ([a 100] [b a] [c (cons a b)]) c) => "(100 . 100)\n"]
 )

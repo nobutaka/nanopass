@@ -5,16 +5,16 @@
 ;; ---------- Core Form
 
 (define *prim-names*
-  '(%eq? %fx+ %fx- %fl+ %car %cdr %cons
+  '(%eq? %fixnum? %fx+ %fx- %fl+ %car %cdr %cons
      %null?
      %string->uninterned-symbol
      string
      %string?
      vector %vector-ref
      %vector-set!
-     %make-byte-string %mutate-to-string4! %string-size %string-byte-ref %string-byte-set!
+     %make-byte-string %string-size %string-byte-ref %string-byte-set!
      %string-fx-ref %string-fx-set!
-     %object-tag
+     %object-tag-set! %object-tag-ref
      %dlsym %foreign-call
      %apply))
 

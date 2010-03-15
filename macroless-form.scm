@@ -107,19 +107,6 @@
               a
               (loop (cdr ls) (cons (car ls) a))))))
 
-    (define string->asciiz
-      (lambda (str)
-        (let* ([size (string-size str)]
-               [asciiz (make-bytevector (+ size 1))])
-          (let loop ([k 0])
-            (if (= k size)
-                (begin
-                  (string-byte-set! asciiz k 0)
-                  asciiz)
-                (begin
-                  (string-byte-set! asciiz k (string-byte-ref str k))
-                  (loop (+ k 1))))))))
-
     (define mutate-to-string4!
       (lambda (str)
         (object-tag-set! str string4-tag)))
@@ -147,6 +134,27 @@
         (let ([str (make-byte-string k)])
           (mutate-to-bytevector! str)
           str)))
+
+    (define string->asciiz
+      (lambda (str)
+        (let* ([size (string-size str)]
+               [asciiz (make-bytevector (+ size 1))])
+          (let loop ([k 0])
+            (if (= k size)
+                (begin
+                  (string-byte-set! asciiz k 0)
+                  asciiz)
+                (begin
+                  (string-byte-set! asciiz k (string-byte-ref str k))
+                  (loop (+ k 1))))))))
+
+    (define asciiz-length
+      (lambda (bv)
+        (let ([limit (string-size bv)])
+          (let loop ([i 0])
+            (cond [(= i limit) limit]
+                  [(= (string-byte-ref bv i) 0) i]
+                  [else (loop (+ i 1))])))))
 
     (define fx->string4
       (lambda (n)

@@ -24,7 +24,6 @@
   [(let ([s (make-byte-string 1000)])
      (string-byte-set! s 500 12)
      (string-byte-ref s 500)) => "12\n"]
-  [(string->asciiz "abc") => "\"abc\\0\"\n"]
 )
 
 (add-tests-with-string-output "string-fx-set! and ref"
@@ -60,6 +59,14 @@
   [(bytevector? "s") => "#f\n"]
   [(bytevector? (make-byte-string 1)) => "#f\n"]
   [(bytevector? (make-bytevector 1)) => "#t\n"]
+  [(string->asciiz "abc") => "\"abc\\0\"\n"]
+  [(asciiz-length (string->asciiz "abc")) => "3\n"]
+  [(let ([asciiz (make-bytevector 10)])
+     (string-byte-set! asciiz 0 97)
+     (string-byte-set! asciiz 1 98)
+     (string-byte-set! asciiz 2 99)
+     (string-byte-set! asciiz 3 0)
+     (asciiz-length asciiz)) => "3\n"]
 )
 
 (add-tests-with-string-output "let*"

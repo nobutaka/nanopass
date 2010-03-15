@@ -24,7 +24,7 @@
   [(let ([s (make-byte-string 1000)])
      (string-byte-set! s 500 12)
      (string-byte-ref s 500)) => "12\n"]
-  [(string->sz "abc") => "\"abc\\0\"\n"]
+  [(string->asciiz "abc") => "\"abc\\0\"\n"]
 )
 
 (add-tests-with-string-output "string-fx-set! and ref"

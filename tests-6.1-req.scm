@@ -33,7 +33,7 @@
                     sym
                     (accum (+ n 1) (string->uninterned-symbol (string #\a)))))])
      (accum 0 (string->uninterned-symbol (string #\a)))) => "a\n"]
-  [(letrec ([a_minus_b (dlsym (string->sz "a_minus_b"))]
+  [(letrec ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]
             [accum
               (lambda (n x)
                 (if (= n 1000000)

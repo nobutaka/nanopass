@@ -69,7 +69,7 @@
     (define string-fx-set! (lambda (str k n) (%string-fx-set! str k n)))
     (define object-tag-set! (lambda (obj tag) (%object-tag-set! obj tag)))
     (define object-tag-ref (lambda (obj) (%object-tag-ref obj)))
-    (define dlsym (lambda (sz) (%dlsym sz)))
+    (define dlsym (lambda (asciiz) (%dlsym asciiz)))
     (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
     (define apply (lambda (proc args) (%apply proc args)))
 
@@ -107,17 +107,17 @@
               a
               (loop (cdr ls) (cons (car ls) a))))))
 
-    (define string->sz
+    (define string->asciiz
       (lambda (str)
         (let* ([size (string-size str)]
-               [sz (make-byte-string (+ size 1))])
+               [asciiz (make-bytevector (+ size 1))])
           (let loop ([k 0])
             (if (= k size)
                 (begin
-                  (string-byte-set! sz k 0)
-                  sz)
+                  (string-byte-set! asciiz k 0)
+                  asciiz)
                 (begin
-                  (string-byte-set! sz k (string-byte-ref str k))
+                  (string-byte-set! asciiz k (string-byte-ref str k))
                   (loop (+ k 1))))))))
 
     (define mutate-to-string4!
@@ -161,12 +161,12 @@
 
     (define cproc
       (lambda (return-type name)
-        (let ([fptr (dlsym (string->sz name))]
+        (let ([fptr (dlsym (string->asciiz name))]
               [convert-argument
                 (lambda (x)
                   (cond [(string4? x) x]
                         [(bytevector? x) x]
-                        [(string? x) (string->sz x)]
+                        [(string? x) (string->asciiz x)]
                         [(fixnum? x) (fx->string4 x)]
                         [else (fx->string4 0)]))]
               [convert-return-value

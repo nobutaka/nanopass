@@ -51,11 +51,6 @@
   [(list) => "()\n"]
 )
 
-(add-tests-with-string-output "reverse"
-  [(reverse '(a b c d e)) => "(e d c b a)\n"]
-  [(reverse '()) => "()\n"]
-)
-
 (add-tests-with-string-output "length"
   [(length '()) => "0\n"]
   [(length '(1)) => "1\n"]
@@ -63,4 +58,20 @@
   [(length '(1 2 3)) => "3\n"]
   [(length (cons 1 '())) => "1\n"]
   [(length '(1 (2 3))) => "2\n"]
+)
+
+(add-tests-with-string-output "map"
+  [(map cadr '((a b) (d e) (g h))) => "(b e h)\n"]
+  [(map (lambda (n) (+ n n))
+        '(1 2 3 4 5)) => "(2 4 6 8 10)\n"]
+  [(let ([count 0])
+     (map (lambda (ignored)
+            (set! count (+ count 1))
+            count)
+          '(a b))) => "(1 2)\n"]
+)
+
+(add-tests-with-string-output "reverse"
+  [(reverse '(a b c d e)) => "(e d c b a)\n"]
+  [(reverse '()) => "()\n"]
 )

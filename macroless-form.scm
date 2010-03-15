@@ -162,18 +162,19 @@
     (define cproc
       (lambda (return-type name)
         (let ([fptr (dlsym (string->sz name))]
-              [convert-return-value (cond [(eq? return-type 'fixnum) string4->fx]
-                                          [(eq? return-type 'void) (lambda (x) #f)]
-                                          [else (lambda (x) x)])])
+              [convert-argument
+                (lambda (x)
+                  (cond [(string4? x) x]
+                        [(bytevector? x) x]
+                        [(string? x) (string->sz x)]
+                        [(fixnum? x) (fx->string4 x)]
+                        [else (fx->string4 0)]))]
+              [convert-return-value
+                (cond [(eq? return-type 'fixnum) string4->fx]
+                      [(eq? return-type 'void) (lambda (x) #f)]
+                      [else (lambda (x) x)])])
           (lambda args
-            (let ([converted-args
-                    (map (lambda (x)
-                           (cond [(string4? x) x]
-                                 [(bytevector? x) x]
-                                 [(string? x) (string->sz x)]
-                                 [(fixnum? x) (fx->string4 x)]
-                                 [else (fx->string4 0)]))
-                         args)])
+            (let ([converted-args (map convert-argument args)])
               (convert-return-value (foreign-call fptr (reverse converted-args) (length converted-args))))))))
 ))
 

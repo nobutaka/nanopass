@@ -59,14 +59,24 @@
   [(bytevector? "s") => "#f\n"]
   [(bytevector? (make-byte-string 1)) => "#f\n"]
   [(bytevector? (make-bytevector 1)) => "#t\n"]
+)
+
+(add-tests-with-string-output "asciiz"
   [(string->asciiz "abc") => "\"abc\\0\"\n"]
   [(asciiz-length (string->asciiz "abc")) => "3\n"]
-  [(let ([asciiz (make-bytevector 10)])
-     (string-byte-set! asciiz 0 97)
-     (string-byte-set! asciiz 1 98)
-     (string-byte-set! asciiz 2 99)
-     (string-byte-set! asciiz 3 0)
-     (asciiz-length asciiz)) => "3\n"]
+  [(let ([bv (make-bytevector 10)])
+     (string-byte-set! bv 0 97)
+     (string-byte-set! bv 1 98)
+     (string-byte-set! bv 2 99)
+     (string-byte-set! bv 3 0)
+     (asciiz-length bv)) => "3\n"]
+  [(asciiz->string (string->asciiz "abc")) => "\"abc\"\n"]
+  [(let ([bv (make-bytevector 10)])
+     (string-byte-set! bv 0 97)
+     (string-byte-set! bv 1 98)
+     (string-byte-set! bv 2 99)
+     (string-byte-set! bv 3 0)
+     (asciiz->string bv)) => "\"abc\"\n"]
 )
 
 (add-tests-with-string-output "let*"

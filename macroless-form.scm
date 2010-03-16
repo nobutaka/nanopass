@@ -40,6 +40,22 @@
                          (begin ,@(cdar args))
                          (cond ,@(cdr args))))))))
 
+    (define-macro do
+      (lambda (var-form test-form . args)
+        (let ([vars (map car var-form)]
+              [vals (map cadr var-form)]
+              [step (map cddr var-form)])
+          `(letrec ([loop (lambda ,vars
+                            (if ,(car test-form)
+                                (begin ,@(cdr test-form))
+                                (begin
+                                  ,@args
+                                  (loop ,@(map (lambda (x y)
+                                                 (if (null? x) y (car x)))
+                                               step
+                                               vars)))))])
+             (loop ,@vals)))))
+
     (define string4-tag     0)
     (define bytevector-tag  1)
 
@@ -138,14 +154,14 @@
     (define string->asciiz
       (lambda (str)
         (let* ([size (string-size str)]
-               [asciiz (make-bytevector (+ size 1))])
+               [bv (make-bytevector (+ size 1))])
           (let loop ([k 0])
             (if (= k size)
                 (begin
-                  (string-byte-set! asciiz k 0)
-                  asciiz)
+                  (string-byte-set! bv k 0)
+                  bv)
                 (begin
-                  (string-byte-set! asciiz k (string-byte-ref str k))
+                  (string-byte-set! bv k (string-byte-ref str k))
                   (loop (+ k 1))))))))
 
     (define asciiz-length
@@ -155,6 +171,14 @@
             (cond [(= i limit) limit]
                   [(= (string-byte-ref bv i) 0) i]
                   [else (loop (+ i 1))])))))
+
+    (define asciiz->string
+      (lambda (bv)
+        (let* ([len (asciiz-length bv)]
+               [s (make-byte-string len)])
+          (do ((i 0 (+ i 1)))
+              ((= i len) s)
+            (string-byte-set! s i (string-byte-ref bv i))))))
 
     (define fx->string4
       (lambda (n)

@@ -41,4 +41,18 @@
        (fgetc fp))) => "97\n"]
   [(let ([printf (cproc 'fixnum "printf")])
      (printf "abc %d %s\n" 12 "def")) => "abc 12 def\n11\n"]
+  [(let ([bv (make-bytevector 10)]
+         [strcpy (cproc 'void* "strcpy")])
+     (strcpy bv "abc")
+     (asciiz->string bv)) => "\"abc\"\n"]
+  [(let ([bv (make-bytevector 10)]
+         [sprintf (cproc 'fixnum "sprintf")])
+     (sprintf bv "%d %s" 1 "two")
+     (asciiz->string bv)) => "\"1 two\"\n"]
+  [(let* ([malloc (cproc 'void* "malloc")]
+          [free (cproc 'void "free")]
+          [ptr (malloc 1024)])
+     ;; do something
+     (free ptr)
+     #f) => "#f\n"]
 )

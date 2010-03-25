@@ -10,7 +10,6 @@ struct RootSet {
     unsigned int usedregs;
     char *stack_top;
     Ptr cp;
-    char *ap;
     Ptr ac;
     Ptr t1;
     Ptr t2;
@@ -70,15 +69,15 @@ struct RootSet {
 # define LOG(...)
 #endif
 
-extern Ptr call_scheme(char *, char *);
+extern Ptr call_scheme();
+extern char *stack_bottom;
+extern char *gc_free;
 extern char *heap_end;
 
-static char *stack_bottom;
 static unsigned int gc_space_size;
 static char *gc_cur_space;
 static char *gc_to_space;
 static char *gc_scan;
-static char *gc_free;
 
 static void *rtldDefault = 0;
 
@@ -119,7 +118,7 @@ static unsigned int content_offset(Ptr *obj)
 static void gc_initialize(unsigned int heap_size)
 {
     gc_space_size = heap_size;
-    gc_cur_space = malloc(gc_space_size);
+    gc_free = gc_cur_space = malloc(gc_space_size);
     memset(gc_cur_space, 0xcd, gc_space_size);
     gc_to_space = malloc(gc_space_size);
     memset(gc_to_space, 0xfd, gc_space_size);
@@ -210,7 +209,6 @@ void gc_collect(struct RootSet *root)
     char *temp = gc_to_space;
     gc_to_space = gc_cur_space;
     gc_cur_space = temp;
-    root->ap = gc_free;
     heap_end = gc_cur_space + gc_space_size;
     memset(gc_to_space, 0xfd, gc_space_size);
 }
@@ -326,7 +324,7 @@ int main(int argc, char *argv[])
 
     rtldDefault = dlopen(0, RTLD_NOW | RTLD_GLOBAL);
 
-    print(call_scheme(stack_bottom, gc_cur_space));
+    print(call_scheme());
 
     printf("\n");
     return 0;

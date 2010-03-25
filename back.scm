@@ -738,22 +738,21 @@
           `(pushl t2)
           `(pushl t1)
           `(pushl ac)
-          `(pushl ap)
           `(pushl cp)
           frameinfocode
           `(pushl ac)           ; push stack top
           `(pushl ,(encode-regs usedregs))
           `(movl sp ac)
-          (cg-align-c-stack (* 9 ws)) ; 8 words struct + 1 pointer
+          (cg-align-c-stack (* 8 ws)) ; 7 words struct + 1 pointer
           `(pushl ac)
           `(call _gc_collect)
-          `(addl ,(* 6 ws) sp)  ; pop 24 bytes for pointer, paddings, usedregs, stack_top
+          `(addl ,(* 7 ws) sp)  ; pop 28 bytes for pointer, paddings, usedregs, stack_top
           `(popl cp)
-          `(popl ap)
           `(popl ac)
           `(popl t1)
           `(popl t2)
           `(popl t3)
+          `(movl _gc_free ap)
           (allocate faultcode)  ; No more memory.
           `(comment "end gc"))))))
 

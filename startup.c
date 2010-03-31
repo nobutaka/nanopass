@@ -8,7 +8,7 @@ typedef long Ptr;
 
 struct RootSet {
     unsigned int usedregs;
-    char *stack_top;
+    Ptr *fp;
     Ptr cp;
     Ptr ac;
     Ptr t1;
@@ -156,7 +156,7 @@ static void gc_walk_roots(struct RootSet *root)
 {
     LOG("gc_walk_roots\n");
     LOG("walk registers\n");
-    root->cp |= proc_tag;                  /* cp is untagged. tag it temporarily. */
+    root->cp |= proc_tag;   /* cp is untagged. tag it temporarily. */
     gc_copy_forward(&root->cp);
     root->cp = UNTAG(root->cp);
     if (root->usedregs & ac_bit) gc_copy_forward(&root->ac);
@@ -164,11 +164,15 @@ static void gc_walk_roots(struct RootSet *root)
     if (root->usedregs & t2_bit) gc_copy_forward(&root->t2);
     if (root->usedregs & t3_bit) gc_copy_forward(&root->t3);
     LOG("\n");
-    LOG("walk stack\n");                            /* walk only one frame now */
-    Ptr *p = (Ptr *)stack_bottom;
-    p++;                                            /* skip return code pointer */
-    for (; p < (Ptr *)root->stack_top; p++)
-        gc_copy_forward(p);
+    LOG("walk stack\n");
+    Ptr *fp = (Ptr *)stack_bottom+1;
+    while (fp <= root->fp) {
+        unsigned int size = *(fp-1) / ws;
+        Ptr *p = fp+1;  /* skip return code pointer */
+        for (; p<fp+size; p++)
+            gc_copy_forward(p);
+        fp = fp+size+1;
+    }
     LOG("\n");
     LOG("end gc_walk_roots\n");
 }

@@ -133,7 +133,9 @@
                   (cg-make-pair       ; ac=(cons obj1 obj2)
                     (instructions
                       `(movl t1 ac)
-                      `(addl ,ws ac))
+                      `(subl fp ac)
+                      `(addl ,ws ac)
+                      `(movl ac (fp ,(- ws))))
                     '(t2)
                     (instructions
                       `(movl t2 (ac ,(* 2 ws)))
@@ -180,7 +182,7 @@
              (set! todo (cons (list codelab code) todo))
              (instructions
                `(comment "build-closure")
-               (cg-fix-allocate (+ (length fvars) 2) 'ac (cg-stacktop fs) '())
+               (cg-fix-allocate (+ (length fvars) 2) 'ac (cg-framesize fs) '())
                `(movl ,(header (length fvars) closure-tag) (ac 0))
                `(movl (imm ,codelab) (ac ,(* 1 ws)))
                (let f ([ls fvars] [pos 2])
@@ -428,7 +430,7 @@
          `(movl (t1 ,(- (* 2 ws) pair-tag)) ac))]
       [(%cons)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
-         (cg-make-pair (cg-stacktop fs) '(t1 t2)
+         (cg-make-pair (cg-framesize fs) '(t1 t2)
            (instructions
              `(movl t1 (ac ,(* 1 ws)))
              `(movl t2 (ac ,(* 2 ws))))))]
@@ -437,7 +439,7 @@
       [(%string->uninterned-symbol)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
-           (cg-fix-allocate 2 'ac (cg-stacktop fs) '(t1))
+           (cg-fix-allocate 2 'ac (cg-framesize fs) '(t1))
            `(movl ,(header 1 symbol-tag) (ac 0))
            `(movl t1 (ac ,ws))
            (cg-type-tag symbol-tag 'ac)))]
@@ -448,7 +450,7 @@
            (cg-fix-allocate
              (+ (quotient (+ (length rands) (- ws 1)) ws) 1)
              'ac
-             (cg-stacktop (+ fs (* (length rands) ws))) 
+             (cg-framesize (+ fs (* (length rands) ws))) 
              '())
            `(movl ,(header (length rands) string-tag) (ac 0))
            (let loop ([fpos fs] [spos ws] [num (length rands)])
@@ -470,7 +472,7 @@
            (cg-fix-allocate
              (+ (length rands) 1)
              'ac
-             (cg-stacktop (+ fs (* (length rands) ws)))
+             (cg-framesize (+ fs (* (length rands) ws)))
              '())
            `(movl ,(header (length rands) vector-tag) (ac 0))
            (let loop ([fpos fs] [vpos 1] [num (length rands)])
@@ -509,7 +511,7 @@
            ;; 8-byte alignment
            `(addl ,(+ ws mask) t2)  ; header and padding
            `(andl ,(not32 mask) t2)
-           (cg-allocate 't2 'ac (cg-stacktop fs) '())
+           (cg-allocate 't2 'ac (cg-framesize fs) '())
            ;; write header
            `(sall ,attr-len t1)
            `(orl ,(ash string-tag 1) t1)
@@ -639,7 +641,7 @@
   (lambda (fs)
     (instructions
       `(movl ac t1)
-      (cg-fix-allocate 2 'ac (cg-stacktop fs) '())
+      (cg-fix-allocate 2 'ac (cg-framesize fs) '())
       `(movl ,(header 4 string4-tag) (ac 0))
       `(movl t1 (ac ,ws))
       (cg-type-tag string-tag 'ac))))
@@ -699,11 +701,10 @@
   (lambda (tag reg)
     `(orl ,tag ,reg)))
 
-(define cg-stacktop
+(define cg-framesize
   (lambda (fs)
     (instructions
-      `(movl fp ac)
-      `(addl ,fs ac))))
+      `(movl ,fs (fp ,(- ws))))))
 
 (define cg-make-pair
   (lambda (frameinfocode usedregs buildcode)
@@ -734,19 +735,19 @@
         (instructions
           `(comment "gc")
           `(subl ,sizecode ap)  ; revert ap
+          frameinfocode
           `(pushl t3)
           `(pushl t2)
           `(pushl t1)
           `(pushl ac)
           `(pushl cp)
-          frameinfocode
-          `(pushl ac)           ; push stack top
+          `(pushl fp)
           `(pushl ,(encode-regs usedregs))
           `(movl sp ac)
           (cg-align-c-stack (* 8 ws)) ; 7 words struct + 1 pointer
           `(pushl ac)
           `(call _gc_collect)
-          `(addl ,(* 7 ws) sp)  ; pop 28 bytes for pointer, paddings, usedregs, stack_top
+          `(addl ,(* 7 ws) sp)  ; pop 28 bytes for pointer, paddings, usedregs, fp
           `(popl cp)
           `(popl ac)
           `(popl t1)

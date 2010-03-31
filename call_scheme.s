@@ -23,9 +23,11 @@ _call_scheme:
     subl $12, %esp                      # balance the c-stack onto a 16-byte boundary for OS X
                                         # 1 return addr + 4 regs + 3 paddings = 8 words
     movl $0, %esi                       # set cp to 0
-    movl _gc_free, %edi                 # heap
-    movl _stack_bottom, %ebp            # stack
-    movl $return_from_scheme, (%ebp)    # set fp to return address
+    movl _gc_free, %edi                 # ap
+    movl _stack_bottom, %ebp            # fp
+    movl $0, (%ebp)                     # size of the frame (indeterminate)
+    addl $4, %ebp
+    movl $return_from_scheme, (%ebp)    # set fp[0] to return address
     movl $0, %ebx                       # set t1 to 0 (number of arguments)
     jmp _scheme_entry
 

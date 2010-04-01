@@ -35,10 +35,10 @@
 )
 
 (add-tests-with-string-output "do"
-;  [(do ((vec (make-vector 5))
-;        (i 0 (+ i 1)))
-;       ((= 1 5) vec)
-;     (vector-set! vec i i)) => "#(0 1 2 3 4)\n"]
+  [(do ((vec (make-vector 5))
+        (i 0 (+ i 1)))
+       ((= i 5) vec)
+     (vector-set! vec i i)) => "#(0 1 2 3 4)\n"]
   [(let ([x '(1 3 5 7 9)])
      (do ((x x (cdr x))
           (sum 0 (+ sum (car x))))

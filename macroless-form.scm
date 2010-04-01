@@ -75,6 +75,7 @@
     (define null? (lambda (obj) (%null? obj)))
     (define string->uninterned-symbol (lambda (x) (%string->uninterned-symbol x)))
     (define string? (lambda (obj) (%string? obj)))
+    (define make-vector (lambda (k) (%make-vector k)))
     (define vector-ref (lambda (v k) (%vector-ref v k)))
     (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
     (define make-byte-string (lambda (k) (%make-byte-string k)))

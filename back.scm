@@ -465,6 +465,8 @@
            `(comment "end string")))]
       [(%string?)
        (cg-type-test exp string-tag mask rands fs dd cd nextlab)]
+      [(%make-vector)
+       (cg-make-vector rands fs dd cd nextlab #t vector-tag)]
       [(vector)
        (cg-true-inline cg-rands rands fs dd cd nextlab
          (instructions
@@ -504,19 +506,7 @@
                (cg-store 't3 dd)        ; why not?
                (cg-jump cd nextlab))))]
       [(%make-byte-string)
-       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
-         (instructions
-           `(sarl ,tag-len t1) ; in bytes
-           `(movl t1 t2)
-           ;; 8-byte alignment
-           `(addl ,(+ ws mask) t2)  ; header and padding
-           `(andl ,(not32 mask) t2)
-           (cg-allocate 't2 'ac (cg-framesize fs) '())
-           ;; write header
-           `(sall ,attr-len t1)
-           `(orl ,(ash string-tag 1) t1)
-           `(movl t1 (ac 0))
-           (cg-type-tag string-tag 'ac)))]
+       (cg-make-vector rands fs dd cd nextlab #f string-tag)]
       [(%string-size)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
@@ -618,6 +608,25 @@
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
 
+(define cg-make-vector
+  (lambda (rands fs dd cd nextlab k-in-words? tag)
+    (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+      (instructions
+        `(sarl ,tag-len t1) ; t1=k
+        `(movl t1 t2)
+        (if k-in-words?
+            `(sall 2 t2)
+            (instructions)) ; in bytes
+        ;; 8-byte alignment
+        `(addl ,(+ ws mask) t2) ; header and padding
+        `(andl ,(not32 mask) t2)
+        (cg-allocate 't2 'ac (cg-framesize fs) '())
+        ;; write header
+        `(sall ,attr-len t1)
+        `(orl ,(ash tag 1) t1)
+        `(movl t1 (ac 0))
+        (cg-type-tag tag 'ac)))))
+
 (define cg-string-set
   (lambda (rands fs dd cd nextlab storecode)
     (instructions
@@ -703,8 +712,7 @@
 
 (define cg-framesize
   (lambda (fs)
-    (instructions
-      `(movl ,fs (fp ,(- ws))))))
+    `(movl ,fs (fp ,(- ws)))))
 
 (define cg-make-pair
   (lambda (frameinfocode usedregs buildcode)

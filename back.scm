@@ -352,6 +352,10 @@
             `(label ,randlab)
             (cg-effect-rands (cdr ls) fs))))))
 
+(define cg-nullary-rands
+  (lambda (rands fs)
+    (instructions)))
+
 (define cg-unary-rand
   (lambda (rands fs)
     (let ([rand (car rands)])
@@ -493,18 +497,14 @@
            `(addl t2 t1)
            `(movl (t1 ,(- ws vector-tag)) ac)))]
       [(%vector-set!)
-       (instructions
-         (cg-ternary-rands rands fs)
-         `(comment "vector-set")
-         `(sarl 1 t2)
-         `(addl t2 t1)
-         `(movl t3 (t1 ,(- ws vector-tag)))
-         `(comment "end vector-set")
-         (if (eq? dd 'effect)
-             (error "Error in vector-set!: Not implemented")
-             (instructions
-               (cg-store 't3 dd)        ; why not?
-               (cg-jump cd nextlab))))]
+       (cg-set-inline cg-ternary-rands rands fs dd cd nextlab
+         (instructions
+           `(comment "vector-set")
+           `(sarl 1 t2)
+           `(addl t2 t1)
+           `(movl t3 (t1 ,(- ws vector-tag)))
+           `(movl t3 ac)
+           `(comment "end vector-set")))]
       [(%make-byte-string)
        (cg-make-vector rands fs dd cd nextlab #f string-tag)]
       [(%string-size)
@@ -534,7 +534,7 @@
            `(sarl ,tag-len t2)
            `(movl t2 (t1 ,(- ws string-tag)))))]
       [(%object-tag-set!)
-       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+       (cg-set-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
            `(movl t2 ac)
            `(sarl ,tag-len t2)
@@ -555,7 +555,7 @@
            `(andl ,mask ac)
            `(sall ,tag-len ac)))]
       [(%dlsym)
-       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+       (cg-set-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
            `(addl ,(- ws string-tag) t1)  ; no need to protect t1
            (cg-align-c-stack ws)
@@ -564,7 +564,7 @@
            `(addl ,(* 4 ws) sp)           ; pop 16 bytes
            (cg-retval-to-string4 fs)))]
       [(%foreign-call)
-       (cg-true-inline cg-ternary-rands rands fs dd cd nextlab
+       (cg-set-inline cg-ternary-rands rands fs dd cd nextlab
          (instructions
            ;; t1=fptr, t2=args, t3=size
            `(movl t1 ac)  ; ac=fptr
@@ -605,6 +605,14 @@
            `(call (near (ac ,(- ws string-tag))))
            `(movl t1 sp)
            (cg-retval-to-string4 fs)))]
+      [(%set-global-ref!)
+       (cg-set-inline cg-unary-rand rands fs dd cd nextlab
+         (instructions
+           `(movl t1 _global_ref)
+           `(movl t1 ac)))]
+      [(%global-ref)
+       (cg-ref-inline cg-nullary-rands rands fs dd cd nextlab
+         `(movl _global_ref ac))]
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
 
@@ -664,6 +672,17 @@
           code
           (cg-store 'ac dd)
           (cg-jump cd nextlab)))))
+
+(define cg-set-inline
+  (lambda (rander rands fs dd cd nextlab code)
+    (instructions
+      (rander rands fs)
+      code
+      (if (eq? dd 'effect)
+          (cg-jump (cd->true cd) nextlab)
+          (instructions
+            (cg-store 'ac dd)        ; why not?
+            (cg-jump cd nextlab))))))
 
 (define cg-ref-inline
   (lambda (rander rands fs dd cd nextlab code)

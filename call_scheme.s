@@ -9,6 +9,9 @@ _gc_free:
     .globl _heap_end
 _heap_end:
     .long 0
+    .globl _global_ref
+_global_ref:
+    .long 0
 
 .text
 

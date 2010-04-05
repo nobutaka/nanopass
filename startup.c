@@ -73,6 +73,7 @@ extern Ptr call_scheme();
 extern char *stack_bottom;
 extern char *gc_free;
 extern char *heap_end;
+extern Ptr global_ref;
 
 static unsigned int gc_space_size;
 static char *gc_cur_space;
@@ -173,6 +174,9 @@ static void gc_walk_roots(struct RootSet *root)
             gc_copy_forward(p);
         fp = fp+size+1;
     }
+    LOG("\n");
+    LOG("walk global references\n");
+    gc_copy_forward(&global_ref);
     LOG("\n");
     LOG("end gc_walk_roots\n");
 }

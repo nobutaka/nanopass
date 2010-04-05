@@ -88,6 +88,8 @@
     (define object-tag-ref (lambda (obj) (%object-tag-ref obj)))
     (define dlsym (lambda (asciiz) (%dlsym asciiz)))
     (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
+    (define set-global-ref! (lambda (obj) (%set-global-ref! obj)))
+    (define global-ref (lambda () (%global-ref)))
     (define apply (lambda (proc args) (%apply proc args)))
 
     (define caar (lambda (x) (car (car x))))

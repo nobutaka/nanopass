@@ -470,7 +470,7 @@
       [(%string?)
        (cg-type-test exp string-tag mask rands fs dd cd nextlab)]
       [(%make-vector)
-       (cg-make-vector rands fs dd cd nextlab #t vector-tag)]
+       (cg-make-vector rands fs dd cd nextlab vector-tag)]
       [(vector)
        (cg-true-inline cg-rands rands fs dd cd nextlab
          (instructions
@@ -506,7 +506,7 @@
            `(movl t3 ac)
            `(comment "end vector-set")))]
       [(%make-byte-string)
-       (cg-make-vector rands fs dd cd nextlab #f string-tag)]
+       (cg-make-vector rands fs dd cd nextlab string-tag)]
       [(%string-size)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
@@ -617,14 +617,15 @@
        (errorf "sanity-check: bad primitive ~s" name)])))
 
 (define cg-make-vector
-  (lambda (rands fs dd cd nextlab k-in-words? tag)
+  (lambda (rands fs dd cd nextlab tag)
     (cg-true-inline cg-unary-rand rands fs dd cd nextlab
       (instructions
         `(sarl ,tag-len t1) ; t1=k
-        `(movl t1 t2)
-        (if k-in-words?
-            `(sall 2 t2)
-            (instructions)) ; in bytes
+        `(movl t1 t2)       ; t2=byte length
+        (if (= tag vector-tag)
+            `(sall 2 t2)    ; words to bytes
+            (instructions)) ; it's already in bytes
+        `(movl t2 t3)       ; t3=byte length
         ;; 8-byte alignment
         `(addl ,(+ ws mask) t2) ; header and padding
         `(andl ,(not32 mask) t2)
@@ -633,6 +634,22 @@
         `(sall ,attr-len t1)
         `(orl ,(ash tag 1) t1)
         `(movl t1 (ac 0))
+        ;; zero fill if needed.
+        (if (= tag vector-tag)
+            (let ([looplab (gen-label "fillloop")]
+                  [breaklab (gen-label "fillbreak")])
+              (instructions
+                `(addl ac t3)   ; t3=last
+                `(movl ac t1)   ; t1=first
+                `(addl ,ws t1)
+                `(label ,looplab)
+                `(cmpl t1 t3)   ; if first>last goto breaklab
+                `(jl ,breaklab)
+                `(movl 0 (t1 0))
+                `(addl ,ws t1)  ; t1+=ws
+                `(jmp ,looplab)
+                `(label ,breaklab)))
+            (instructions))
         (cg-type-tag tag 'ac)))))
 
 (define cg-string-set

@@ -1,3 +1,13 @@
+(add-tests-with-string-output "low-level ffi"
+  [(eq? (begin
+          (set-global-ref! (cons 12 13))
+          (global-ref))
+        (cons 12 13)) => "#f\n"]
+  [(let ([pair (cons 12 13)])
+     (set-global-ref! pair)
+     (eq? pair (global-ref))) => "#t\n"]
+)
+
 (add-tests-with-string-output "foreign-call"
   [(string4? (dlsym (string->asciiz "twelve"))) => "#t\n"]
   [(string4? (foreign-call (dlsym (string->asciiz "twelve")) '() 0)) => "#t\n"]

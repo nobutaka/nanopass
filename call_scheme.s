@@ -1,16 +1,15 @@
 .data
 
-    .globl _stack_bottom
+    .globl _stack_bottom, _gc_free, _heap_end, _global_ref, context_fp
 _stack_bottom:
     .long 0
-    .globl _gc_free
 _gc_free:
     .long 0
-    .globl _heap_end
 _heap_end:
     .long 0
-    .globl _global_ref
 _global_ref:
+    .long 0
+context_fp:
     .long 0
 
 .text

@@ -1,14 +1,14 @@
 (add-tests-with-string-output "low-level ffi"
   [(eq? (begin
-          (set-global-ref! (cons 12 13))
-          (global-ref))
+          (set-global-refs! (cons 12 13))
+          (global-refs))
         (cons 12 13)) => "#f\n"]
   [(let ([pair (cons 12 13)])
-     (set-global-ref! pair)
-     (eq? pair (global-ref))) => "#t\n"]
+     (set-global-refs! pair)
+     (eq? pair (global-refs))) => "#t\n"]
 )
 
-(add-tests-with-string-output "foreign-call"
+(add-tests-with-string-output "foreign function call"
   [(string4? (dlsym (string->asciiz "twelve"))) => "#t\n"]
   [(string4? (foreign-call (dlsym (string->asciiz "twelve")) '() 0)) => "#t\n"]
   [(let ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]
@@ -65,4 +65,14 @@
      ;; do something
      (free ptr)
      #f) => "#f\n"]
+)
+
+(add-tests-with-string-output "callback"
+  [(let ([one (lambda () 1)]
+         [ccc (cproc 'fixnum "call_call_closure")]
+         [refs (make-vector 2)])
+     (vector-set! refs 0 primordial-continuation)
+     (vector-set! refs 1 one)
+     (set-global-refs! refs)
+     (ccc)) => "8\n"]
 )

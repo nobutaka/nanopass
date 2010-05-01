@@ -30,10 +30,10 @@
   [(letrec ([loop
               (lambda (n)
                 (if (= n 10000)
-                    (global-ref)
+                    (global-refs)
                     (loop (+ n 1))))])
-     (set-global-ref! (cons 12 13))
-     (loop 0)) => "(12 . 13)\n"]
+     (set-global-refs! (cons 12 (vector 13)))
+     (loop 0)) => "(12 . #(13))\n"]
   [(letrec ([loop
               (lambda (n str)
                 (if (= n 10000)

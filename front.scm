@@ -15,7 +15,7 @@
      %make-byte-string %string-size %string-byte-ref %string-byte-set!
      %string-fx-ref %string-fx-set!
      %object-tag-set! %object-tag-ref
-     %dlsym %foreign-call %set-global-ref! %global-ref
+     %dlsym %foreign-call %set-global-refs! %global-refs
      %apply))
 
 (define *keywords*

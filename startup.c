@@ -73,7 +73,7 @@ extern Ptr call_scheme();
 extern char *stack_bottom;
 extern char *gc_free;
 extern char *heap_end;
-extern Ptr global_ref;
+extern Ptr global_refs;
 
 static unsigned int gc_space_size;
 static char *gc_cur_space;
@@ -176,7 +176,7 @@ static void gc_walk_roots(struct RootSet *root)
     }
     LOG("\n");
     LOG("walk global references\n");
-    gc_copy_forward(&global_ref);
+    gc_copy_forward(&global_refs);
     LOG("\n");
     LOG("end gc_walk_roots\n");
 }
@@ -226,6 +226,7 @@ void *dlsym_subr(const char* symbol) { return dlsym(rtldDefault, symbol); }
 int twelve() { return 12; }
 int a_minus_b(int a, int b) { return a-b; }
 int get_byte(char* data, int k) { return data[k]; }
+int call_call_closure() { return call_closure(); }
 
 static void print_string(Ptr ptr)
 {

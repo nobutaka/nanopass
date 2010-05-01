@@ -2,11 +2,12 @@
 
 (define cps-form
   (lambda (exp)
-    `((lambda (call/cc)
-        ,(cps exp '(lambda (r) r)))
+    `((lambda (call/cc primordial-continuation)
+        ,(cps exp 'primordial-continuation))
       (lambda (k f)
         (f k (lambda (dummy-k result)
-               (k result)))))))
+               (k result))))
+      (lambda (r) r))))
 
 (define cps
   (lambda (exp cont-exp)

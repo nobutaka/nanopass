@@ -268,9 +268,8 @@
 (define cg-jump-closure
   (lambda ()
     (instructions
-      `(movl ,mask cp)
-      `(notl cp)
-      `(andl ac cp)
+      `(movl ac cp)
+      `(subl ,closure-tag cp)
       `(movl (cp ,(* 1 ws)) ac)
       `(jmp (near ac)))))
 
@@ -617,14 +616,14 @@
            `(movl (fp ,fs) cp)
            `(movl _gc_free ap)
            (cg-retval-to-string4 fs)))]
-      [(%set-global-ref!)
+      [(%set-global-refs!)
        (cg-set-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
-           `(movl t1 _global_ref)
+           `(movl t1 _global_refs)
            `(movl t1 ac)))]
-      [(%global-ref)
+      [(%global-refs)
        (cg-ref-inline cg-nullary-rands rands fs dd cd nextlab
-         `(movl _global_ref ac))]
+         `(movl _global_refs ac))]
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
 

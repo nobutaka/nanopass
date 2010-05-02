@@ -68,11 +68,24 @@
 )
 
 (add-tests-with-string-output "callback"
-  [(let ([one (lambda () 1)]
+  [(let ([refs (make-vector 2)]
          [ccc (cproc 'fixnum "call_call_closure")]
-         [refs (make-vector 2)])
+         [proc (lambda () 1)])
      (vector-set! refs 0 primordial-continuation)
-     (vector-set! refs 1 one)
+     (vector-set! refs 1 proc)
      (set-global-refs! refs)
-     (ccc)) => "8\n"]
+     (ccc)) => "1\n"]
+  [(letrec ([refs (make-vector 2)]
+            [ccc (cproc 'fixnum "call_call_closure")]
+            [counter 1]
+            [proc (lambda ()
+                    (if (= counter 10)
+                        counter
+                        (begin
+                          (set! counter (+ counter 1))
+                          (ccc))))])
+     (vector-set! refs 0 primordial-continuation)
+     (vector-set! refs 1 proc)
+     (set-global-refs! refs)
+     (ccc)) => "10\n"]
 )

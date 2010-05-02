@@ -61,6 +61,7 @@ _call_closure:
     jmp *4(%esi)
 
 return_from_closure:
+    sarl $3, %eax                       # fixnum->int
     movl %ebp, context_fp
     addl $12, %esp
     popl %ebp

@@ -605,6 +605,7 @@
            (cg-type-tag closure-tag 'cp)
            `(movl cp (fp ,fs))
            (cg-framesize (+ fs ws))
+           `(movl ap _gc_free)
            ;; create a new frame
            `(movl fp t2)
            `(addl ,(+ fs (* 2 ws)) t2)  ; new fp
@@ -615,9 +616,9 @@
            `(movl t1 sp)
            ;; restore scheme context
            ;  fp is callee-save register. It was restored by function epilogue.
+           `(movl _gc_free ap)
            `(movl (fp ,fs) cp)
            `(subl ,closure-tag cp)
-           `(movl _gc_free ap)
            (cg-retval-to-string4 fs)))]
       [(%set-global-refs!)
        (cg-set-inline cg-unary-rand rands fs dd cd nextlab

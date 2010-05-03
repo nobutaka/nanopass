@@ -88,4 +88,21 @@
      (vector-set! refs 1 proc)
      (set-global-refs! refs)
      (ccc)) => "10\n"]
+  [(letrec ([refs (make-vector 2)]
+            [ccc (cproc 'fixnum "call_call_closure")]
+            [counter 1]
+            [proc (lambda ()
+                    (if (= counter 10)
+                        counter
+                        (begin
+                          (if (= counter 5) (collect) #f)
+                          (set! counter (+ counter 1))
+                          (ccc))))]
+            [collect (lambda ()
+                       (make-vector 5000)
+                       (make-vector 5000))])
+     (vector-set! refs 0 primordial-continuation)
+     (vector-set! refs 1 proc)
+     (set-global-refs! refs)
+     (ccc)) => "10\n"]
 )

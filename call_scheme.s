@@ -63,6 +63,7 @@ _call_closure:
 return_from_closure:
     sarl $3, %eax                       # fixnum->int
     movl %ebp, context_fp
+    movl %edi, _gc_free
     addl $12, %esp
     popl %ebp
     popl %edi

@@ -602,7 +602,9 @@
                  set-t2-to-cdr-then-loop  ; t2=cdr
                  `(label ,breaklab))))
            ;; save scheme context
+           (cg-type-tag closure-tag 'cp)
            `(movl cp (fp ,fs))
+           (cg-framesize (+ fs ws))
            ;; create a new frame
            `(movl fp t2)
            `(addl ,(+ fs (* 2 ws)) t2)  ; new fp
@@ -614,6 +616,7 @@
            ;; restore scheme context
            ;  fp is callee-save register. It was restored by function epilogue.
            `(movl (fp ,fs) cp)
+           `(subl ,closure-tag cp)
            `(movl _gc_free ap)
            (cg-retval-to-string4 fs)))]
       [(%set-global-refs!)

@@ -4,4 +4,6 @@
   [(call/cc (lambda (k) (+ 1 (k 12)))) => "12\n"]
   [(+ (call/cc (lambda (k) (k 12)))
       (call/cc (lambda (k) 13))) => "25\n"]
+  [(+ 1 (call/cc (lambda (k)
+                   (+ 20 (k 300))))) => "301\n"]
 )

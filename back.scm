@@ -328,7 +328,7 @@
 (define cg-set-branch
   (lambda (obj dd cd nextlab)
     (instructions
-      `(movl ,(encode obj) ,dd ,(format "~s" obj))
+      `(movl ,(encode obj) ,dd ,(format "~a" obj))
       (cg-jump cd nextlab))))
 
 (define cg-rands

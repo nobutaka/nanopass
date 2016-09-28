@@ -226,6 +226,7 @@ void *dlsym_subr(const char* symbol) { return dlsym(rtldDefault, symbol); }
 int twelve() { return 12; }
 int a_minus_b(int a, int b) { return a-b; }
 int get_byte(char* data, int k) { return data[k]; }
+extern int call_closure();
 int call_call_closure() { return call_closure(); }
 
 static void print_string(Ptr ptr)
@@ -311,7 +312,7 @@ static void print(Ptr ptr)
             break;
         }
     case proc_tag:
-        printf("<procedure>", ptr);
+        printf("<procedure>");
         break;
     case float_tag:
         {

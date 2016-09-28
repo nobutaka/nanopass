@@ -37,7 +37,7 @@
         (let ([inst (car ls)])
           (case (car inst)
             [(comment)
-             (printf "\t\t# ~a " (cadr inst))]
+             (printf "\t# ~a" (cadr inst))]
             [(label)
              (printf "~a:" (cadr inst))]
             [else
@@ -66,7 +66,7 @@
           (printf "$")
           (print-elem x)])]
       [(string? obj)
-       (printf "\t# ~a " obj)]
+       (printf "\t/* ~a */" obj)]
       [(number? obj)
        (printf "$~a" obj)]
       [else (printf "~a" obj)])))

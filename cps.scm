@@ -15,7 +15,7 @@
         `(,cont-exp ,exp)
         (match exp
           [('quote obj)
-           `(,cont-exp (quote ,obj))]
+           `(,cont-exp ,exp)]
           [('begin a b)
            (let ([b-exp (cps b cont-exp)]
                  [r (new-var 'r)])

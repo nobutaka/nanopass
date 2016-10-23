@@ -1,5 +1,6 @@
 (load "./front.scm")
 (load "./cps.scm")
+(load "./beta-reduce.scm")
 (load "./bitfield32.scm")
 (load "./back.scm")
 (load "./emu.scm")

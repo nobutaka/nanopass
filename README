@@ -16,3 +16,4 @@ References.
 [3] An Incremental Approach to Compiler Construction, http://www.cs.indiana.edu/~aghuloum/
 [4] The 90 Minute Scheme to C compiler, http://www.iro.umontreal.ca/~boucherd/mslug/meetings/20041020/minutes-en.html
 [5] scheme -> LLVM, http://www.ida.liu.se/~tobnu/scheme2llvm/
+[6] 非決定的計算オペレータ amb の並列化, http://www.principia-m.com/ts/0127/index-jp.html

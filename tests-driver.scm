@@ -16,11 +16,12 @@
           (immediate-literal-form
             (assignmentless-form
               (analyzed-form
-                (cps-form
-                  (core-form
-                    (local-form
-                      (macroless-form
-                        (append-library expr)))))))))))))
+                (beta-reduce
+                  (cps-form
+                    (core-form
+                      (local-form
+                        (macroless-form
+                          (append-library expr))))))))))))))
 
 (define execute
   (lambda ()

@@ -16,21 +16,23 @@
       (and (not (pair? x)) (not (null? x))))))
 
 (define (beta-reduce expr)
-  (match expr
-    ((('lambda formals body) . args)
-     (if (every atomic? args)  ; symbol? or constant? other than lamnda-expr
-         (let ((body-u (subst (map cons formals args) body)))
-           (if (equal? body body-u)
-               body
-               (beta-reduce body-u)))
-         `((lambda ,formals ,(beta-reduce body))
-           ,@(map beta-reduce args))))
-    ((? symbol?) expr)
-    (('lambda formals body)
-     `(lambda ,formals ,(beta-reduce body)))
-    ((f . args)
-     (map beta-reduce expr))
-    (_ expr)))
+  (if (not (pair? exp))
+      expr
+      (match expr
+        ((('lambda formals body) . args)
+         (if (every atomic? args)  ; symbol? or constant? other than lamnda-expr
+             (let ((body-u (subst (map cons formals args) body)))
+               (if (equal? body body-u)
+                   body
+                   (beta-reduce body-u)))
+             `((lambda ,formals ,(beta-reduce body))
+               ,@(map beta-reduce args))))
+        ((? symbol?) expr)
+        (('lambda formals body)
+         `(lambda ,formals ,(beta-reduce body)))
+        ((f . args)
+         (map beta-reduce expr))
+        (_ expr))))
 
 (define (subst s expr)
   (match expr

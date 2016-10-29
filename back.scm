@@ -327,9 +327,22 @@
 
 (define cg-set-branch
   (lambda (obj dd cd nextlab)
-    (instructions
-      `(movl ,(encode obj) ,dd ,(format "~a" obj))
-      (cg-jump cd nextlab))))
+    (cond
+      [(eq? dd 'effect)
+       (if (pair? cd)
+           (let ([truelab (car cd)]
+                 [falselab (cadr cd)])
+             (cg-jump (if obj truelab falselab) nextlab))
+           (cg-jump cd nextlab))]
+      [(pair? dd)
+       (instructions
+         `(movl ,(encode obj) t1 ,(format "~a" obj))
+         `(movl t1 ,dd)
+         (cg-jump cd nextlab))]
+      [else
+       (instructions
+         `(movl ,(encode obj) ,dd ,(format "~a" obj))
+         (cg-jump cd nextlab))])))
 
 (define cg-rands
   (lambda (rands fs)

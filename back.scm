@@ -429,15 +429,9 @@
            `(movl t1 ac)
            `(subl t2 ac)))]
       [(%fl+)
-       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
-         (instructions
-           `(andl ,(not32 mask) t1)
-           `(andl ,(not32 mask) t2)
-           `(movd t1 xmm0)
-           `(movd t2 xmm1)
-           `(addss xmm1 xmm0)
-           `(movd xmm0 ac)
-           (cg-type-tag float-tag 'ac)))]
+       (cg-fl rands fs dd cd nextlab 'addss)]
+      [(%fl*)
+       (cg-fl rands fs dd cd nextlab 'mulss)]
       [(%car)
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- ws pair-tag)) ac))]
@@ -466,7 +460,7 @@
            (cg-fix-allocate
              (+ (quotient (+ (length rands) (- ws 1)) ws) 1)
              'ac
-             (cg-framesize (+ fs (* (length rands) ws))) 
+             (cg-framesize (+ fs (* (length rands) ws)))
              '())
            `(movl ,(header (length rands) string-tag) (ac 0))
            (let loop ([fpos fs] [spos ws] [num (length rands)])
@@ -643,6 +637,18 @@
          `(movl _global_refs ac))]
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
+
+(define cg-fl
+  (lambda (rands fs dd cd nextlab inst)
+    (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+      (instructions
+        `(andl ,(not32 mask) t1)
+        `(andl ,(not32 mask) t2)
+        `(movd t1 xmm0)
+        `(movd t2 xmm1)
+        `(,inst xmm1 xmm0)
+        `(movd xmm0 ac)
+        (cg-type-tag float-tag 'ac)))))
 
 (define cg-make-vector
   (lambda (rands fs dd cd nextlab tag)

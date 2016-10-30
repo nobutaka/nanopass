@@ -5,18 +5,19 @@
 ;; ---------- Core Form
 
 (define *prim-names*
-  '(%eq? %fixnum? %fx+ %fx- %fl+ %fl* %car %cdr %cons
-     %null?
-     %string->uninterned-symbol
-     string
-     %string?
-     %make-vector vector %vector-ref
-     %vector-set!
-     %make-byte-string %string-size %string-byte-ref %string-byte-set!
-     %string-fx-ref %string-fx-set!
-     %object-tag-set! %object-tag-ref
-     %dlsym %foreign-call %set-global-refs! %global-refs
-     %apply))
+  '(%eq? %fixnum? %fx+ %fx- %fl+ %fl- %fl* %fl/
+    %car %cdr %cons
+    %null?
+    %string->uninterned-symbol
+    string
+    %string?
+    %make-vector vector %vector-ref
+    %vector-set!
+    %make-byte-string %string-size %string-byte-ref %string-byte-set!
+    %string-fx-ref %string-fx-set!
+    %object-tag-set! %object-tag-ref
+    %dlsym %foreign-call %set-global-refs! %global-refs
+    %apply))
 
 (define *keywords*
   '(quote begin if set! lambda))

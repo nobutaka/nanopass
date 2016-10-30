@@ -430,8 +430,12 @@
            `(subl t2 ac)))]
       [(%fl+)
        (cg-fl rands fs dd cd nextlab 'addss)]
+      [(%fl-)
+       (cg-fl rands fs dd cd nextlab 'subss)]
       [(%fl*)
        (cg-fl rands fs dd cd nextlab 'mulss)]
+      [(%fl/)
+       (cg-fl rands fs dd cd nextlab 'divss)]
       [(%car)
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- ws pair-tag)) ac))]

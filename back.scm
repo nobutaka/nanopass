@@ -416,6 +416,9 @@
       [(%eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
          `(cmpl t1 t2))]
+      [(%lt?)
+       (cg-binary-pred-inline exp rands fs dd cd nextlab 'jl 'jge
+         `(cmpl t2 t1))]
       [(%fixnum?)
        (cg-type-test exp number-tag mask rands fs dd cd nextlab)]
       [(%fx+)

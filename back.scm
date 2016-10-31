@@ -460,6 +460,11 @@
          (instructions
            (t->xmm)
            `(ucomiss xmm1 xmm0)))]
+      [(%fl<)
+       (cg-binary-pred-inline exp rands fs dd cd nextlab 'jb 'jae
+         (instructions
+           (t->xmm)
+           `(ucomiss xmm1 xmm0)))]
       [(%car)
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- ws pair-tag)) ac))]

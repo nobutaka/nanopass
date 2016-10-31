@@ -415,7 +415,7 @@
     (case name
       [(%eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
-         `(cmpl t1 t2))]
+         `(cmpl t2 t1))]
       [(%lt?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'jl 'jge
          `(cmpl t2 t1))]
@@ -432,13 +432,34 @@
            `(movl t1 ac)
            `(subl t2 ac)))]
       [(%fl+)
-       (cg-fl rands fs dd cd nextlab 'addss)]
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
+           (t->xmm)
+           `(addss xmm1 xmm0)
+           (xmm->ac)))]
       [(%fl-)
-       (cg-fl rands fs dd cd nextlab 'subss)]
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
+           (t->xmm)
+           `(subss xmm1 xmm0)
+           (xmm->ac)))]
       [(%fl*)
-       (cg-fl rands fs dd cd nextlab 'mulss)]
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
+           (t->xmm)
+           `(mulss xmm1 xmm0)
+           (xmm->ac)))]
       [(%fl/)
-       (cg-fl rands fs dd cd nextlab 'divss)]
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
+           (t->xmm)
+           `(divss xmm1 xmm0)
+           (xmm->ac)))]
+      [(%fl=)
+       (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
+         (instructions
+           (t->xmm)
+           `(ucomiss xmm1 xmm0)))]
       [(%car)
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- ws pair-tag)) ac))]
@@ -645,17 +666,19 @@
       [else
        (errorf "sanity-check: bad primitive ~s" name)])))
 
-(define cg-fl
-  (lambda (rands fs dd cd nextlab inst)
-    (cg-true-inline cg-binary-rands rands fs dd cd nextlab
-      (instructions
-        `(andl ,(not32 mask) t1)
-        `(andl ,(not32 mask) t2)
-        `(movd t1 xmm0)
-        `(movd t2 xmm1)
-        `(,inst xmm1 xmm0)
-        `(movd xmm0 ac)
-        (cg-type-tag float-tag 'ac)))))
+(define t->xmm
+  (lambda ()
+    (instructions
+      `(andl ,(not32 mask) t1)
+      `(andl ,(not32 mask) t2)
+      `(movd t1 xmm0)
+      `(movd t2 xmm1))))
+
+(define xmm->ac
+  (lambda ()
+    (instructions
+      `(movd xmm0 ac)
+      (cg-type-tag float-tag 'ac))))
 
 (define cg-make-vector
   (lambda (rands fs dd cd nextlab tag)

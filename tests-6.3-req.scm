@@ -32,4 +32,5 @@
 (add-tests-with-string-output "fl="
   [(fl= 1.0 1.0) => "#t\n"]
   [(fl= 1.0 1.1) => "#f\n"]
+  [(fl= -0.0 0.0) => "#t\n"]
 )

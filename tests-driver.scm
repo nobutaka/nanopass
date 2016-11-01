@@ -8,21 +8,6 @@
          '(test-name [expr output-string] ...)
          all-tests))]))
 
-(define build-program
-  (lambda (expr)
-    (x86
-      (cg-top
-        (code-generation-form
-          (immediate-literal-form
-            (assignmentless-form
-              (analyzed-form
-                (beta-reduce
-                  (cps-form
-                    (core-form
-                      (local-form
-                        (macroless-form
-                          (append-library expr))))))))))))))
-
 (define execute
   (lambda ()
     (unless (zero? (sys-system "./a.out > output"))

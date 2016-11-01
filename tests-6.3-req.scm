@@ -1,3 +1,11 @@
+(add-tests-with-string-output "flonum"
+  [(flonum 0) => "0.000000\n"]
+  [(flonum 1) => "1.000000\n"]
+  [(flonum -1) => "-1.000000\n"]
+  [(flonum 42) => "42.000000\n"]
+  [(fl+ 4.5 (flonum 42)) => "46.500000\n"]
+)
+
 (add-tests-with-string-output "fl+"
   [(fl+ 1.0 2.0) => "3.000000\n"]
   [(fl+ 1.0 -2.0) => "-1.000000\n"]

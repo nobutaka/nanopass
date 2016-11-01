@@ -431,6 +431,12 @@
          (instructions
            `(movl t1 ac)
            `(subl t2 ac)))]
+      [(%flonum)
+       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+         (instructions
+           `(sarl ,tag-len t1)
+           `(cvtsi2ss t1 xmm0)
+           (xmm->ac)))]
       [(%fl+)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions

@@ -62,6 +62,7 @@
     ;; wraps primitives
     (define eq? (lambda (x1 x2) (%eq? x1 x2)))
     (define fixnum? (lambda (obj) (%fixnum? obj)))
+    (define fixnum (lambda (x) (%fixnum x)))
     (define fx+ (lambda (x1 x2) (%fx+ x1 x2)))
     (define fx- (lambda (x1 x2) (%fx- x1 x2)))
     (define fx= (lambda (x1 x2) (%eq? x1 x2)))

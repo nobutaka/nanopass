@@ -6,6 +6,14 @@
   [(fixnum? (fx+ 12 13)) => "#t\n"]
 )
 
+(add-tests-with-string-output "fixnum"
+  [(fixnum 0.0) => "0\n"]
+  [(fixnum 1.5) => "1\n"]
+  [(fixnum 11.9) => "11\n"]
+  [(fixnum -2.45) => "-2\n"]
+  [(fixnum? (fixnum 100.01)) => "#t\n"]
+)
+
 (add-tests-with-string-output "fx+"
   [(fx+ 1 2) => "3\n"]
   [(fx+ 1 -2) => "-1\n"]

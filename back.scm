@@ -421,6 +421,13 @@
          `(cmpl t2 t1))]
       [(%fixnum?)
        (cg-type-test exp number-tag mask rands fs dd cd nextlab)]
+      [(%fixnum)
+       (cg-true-inline cg-unary-rand rands fs dd cd nextlab
+         (instructions
+           `(andl ,(not32 mask) t1)
+           `(movd t1 xmm0)
+           `(cvttss2si xmm0 ac)
+           `(sall ,tag-len ac)))]
       [(%fx+)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions

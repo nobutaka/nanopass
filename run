@@ -1,0 +1,5 @@
+#!/usr/bin/env gosh
+(load "./compiler.scm")
+(define (main args)
+  (build-program `(begin ,@(call-with-input-file (cadr args) port->sexp-list)))
+  (sys-system "./a.out"))

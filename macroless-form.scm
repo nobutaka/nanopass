@@ -75,6 +75,7 @@
     (define fl/ (lambda (x1 x2) (%fl/ x1 x2)))
     (define fl= (lambda (x1 x2) (%fl= x1 x2)))
     (define fl< (lambda (x1 x2) (%fl< x1 x2)))
+    (define fl<= (lambda (x1 x2) (%fl<= x1 x2)))
     (define + fx+)
     (define - fx-)
     (define = fx=)

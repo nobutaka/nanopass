@@ -80,6 +80,11 @@
   [(fx- 1 (fx- 2 (fx- 3 (fx- 4 (fx- 5 (fx- 6 (fx- 7 (fx- 8 9)))))))) => "5\n"]
 )
 
+(add-tests-with-string-output "fx*"
+  [(fx* 3 -3) => "-9\n"]
+  [(fx* (fx* 1 -2) -3) => "6\n"]
+)
+
 (add-tests-with-string-output "fx="
   [(fx= 12 13) => "#f\n"]
   [(fx= 12 12) => "#t\n"]

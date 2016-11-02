@@ -6,7 +6,7 @@
 
 (define *prim-names*
   '(%eq? %lt?
-    %fixnum? %fixnum %fx+ %fx-
+    %fixnum? %fixnum %fx+ %fx- %fx*
     %flonum %fl+ %fl- %fl* %fl/ %fl= %fl<
     %car %cdr %cons
     %null?

@@ -216,7 +216,7 @@
                         [(fixnum? x) (fx->string4 x)]
                         [else (fx->string4 0)]))]
               [convert-return-value
-                (cond [(eq? return-type 'fixnum) string4->fx]
+                (cond [(eq? return-type 'int) string4->fx]
                       [(eq? return-type 'void) (lambda (x) #f)]
                       [else (lambda (x) x)])])
           (lambda args

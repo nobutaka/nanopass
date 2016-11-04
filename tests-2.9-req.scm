@@ -39,24 +39,24 @@
          [open-args (list (string->asciiz "./data.txt") (string->asciiz "r"))])
      (let ([fp (foreign-call fopen (reverse open-args) (length open-args))])
        (string4->fx (foreign-call fgetc (list fp) 1)))) => "97\n"]
-  [(let ([a_minus_b (cproc 'fixnum "a_minus_b")])
+  [(let ([a_minus_b (cproc 'int "a_minus_b")])
      (a_minus_b 8 5)) => "3\n"]
   [(let ([data (make-bytevector 5)])
      (string-byte-set! data 4 12)
-     (let ([get_byte (cproc 'fixnum "get_byte")])
+     (let ([get_byte (cproc 'int "get_byte")])
        (get_byte data 4))) => "12\n"]
   [(let ([fopen (cproc 'void* "fopen")]
-         [fgetc (cproc 'fixnum "fgetc")])
+         [fgetc (cproc 'int "fgetc")])
      (let ([fp (fopen "./data.txt" "r")])
        (fgetc fp))) => "97\n"]
-  [(let ([printf (cproc 'fixnum "printf")])
+  [(let ([printf (cproc 'int "printf")])
      (printf "abc %d %s\n" 12 "def")) => "abc 12 def\n11\n"]
   [(let ([bv (make-bytevector 10)]
          [strcpy (cproc 'void* "strcpy")])
      (strcpy bv "abc")
      (asciiz->string bv)) => "\"abc\"\n"]
   [(let ([bv (make-bytevector 10)]
-         [sprintf (cproc 'fixnum "sprintf")])
+         [sprintf (cproc 'int "sprintf")])
      (sprintf bv "%d %s" 1 "two")
      (asciiz->string bv)) => "\"1 two\"\n"]
   [(let* ([malloc (cproc 'void* "malloc")]
@@ -69,14 +69,14 @@
 
 (add-tests-with-string-output "callback"
   [(let ([refs (make-vector 2)]
-         [ccc (cproc 'fixnum "call_call_closure")]
+         [ccc (cproc 'int "call_call_closure")]
          [proc (lambda () 1)])
      (vector-set! refs 0 primordial-continuation)
      (vector-set! refs 1 proc)
      (set-global-refs! refs)
      (ccc)) => "1\n"]
   [(letrec ([refs (make-vector 2)]
-            [ccc (cproc 'fixnum "call_call_closure")]
+            [ccc (cproc 'int "call_call_closure")]
             [counter 1]
             [proc (lambda ()
                     (if (= counter 10)
@@ -89,7 +89,7 @@
      (set-global-refs! refs)
      (ccc)) => "10\n"]
   [(letrec ([refs (make-vector 2)]
-            [ccc (cproc 'fixnum "call_call_closure")]
+            [ccc (cproc 'int "call_call_closure")]
             [counter 1]
             [proc (lambda ()
                     (if (= counter 10)

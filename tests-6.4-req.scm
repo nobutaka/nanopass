@@ -26,16 +26,16 @@
      (string-byte-ref s 500)) => "12\n"]
 )
 
-(add-tests-with-string-output "string-fx-set! and ref"
+(add-tests-with-string-output "string-int-set! and ref"
   [(let ([s (make-byte-string 4)])
-     (string-fx-set! s 0 12)
-     (string-fx-ref s 0)) => "12\n"]
+     (string-int-set! s 0 12)
+     (string-int-ref s 0)) => "12\n"]
   [(let ([s (make-byte-string 8)])
-     (string-fx-set! s 4 13)
-     (string-fx-set! s 0 12)
-     (list (string-fx-ref s 0) (string-fx-ref s 4))) => "(12 13)\n"]
+     (string-int-set! s 4 13)
+     (string-int-set! s 0 12)
+     (list (string-int-ref s 0) (string-int-ref s 4))) => "(12 13)\n"]
   [(let ([s (make-byte-string 4)])
-     (string-fx-set! s 0 61183) ; 0xeeff
+     (string-int-set! s 0 61183) ; 0xeeff
      (list (string-byte-ref s 0) (string-byte-ref s 1))) => "(255 238)\n"]  ; 0xff 0xee
 )
 

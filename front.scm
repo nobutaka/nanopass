@@ -16,7 +16,7 @@
     %make-vector vector %vector-ref
     %vector-set!
     %make-byte-string %string-size %string-byte-ref %string-byte-set!
-    %string-fx-ref %string-fx-set!
+    %string-int-ref %string-int-set!
     %object-tag-set! %object-tag-ref
     %dlsym %foreign-call %set-global-refs! %global-refs
     %apply))

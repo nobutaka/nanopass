@@ -93,8 +93,8 @@
     (define string-size (lambda (str) (%string-size str)))
     (define string-byte-ref (lambda (str k) (%string-byte-ref str k)))
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
-    (define string-fx-ref (lambda (str k) (%string-fx-ref str k)))
-    (define string-fx-set! (lambda (str k n) (%string-fx-set! str k n)))
+    (define string-int-ref (lambda (str k) (%string-int-ref str k)))
+    (define string-int-set! (lambda (str k n) (%string-int-set! str k n)))
     (define object-tag-set! (lambda (obj tag) (%object-tag-set! obj tag)))
     (define object-tag-ref (lambda (obj) (%object-tag-ref obj)))
     (define dlsym (lambda (asciiz) (%dlsym asciiz)))
@@ -197,13 +197,13 @@
     (define fx->string4
       (lambda (n)
         (let ([str (make-byte-string 4)])
-          (string-fx-set! str 0 n)
+          (string-int-set! str 0 n)
           (mutate-to-string4! str)
           str)))
 
     (define string4->fx
       (lambda (str)
-        (string-fx-ref str 0)))
+        (string-int-ref str 0)))
 
     (define cproc
       (lambda (return-type name)

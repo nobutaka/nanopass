@@ -588,12 +588,12 @@
          (instructions
            `(sarl ,tag-len t2)
            `(movb t2l (t1 ,(- ws string-tag)))))]
-      [(%string-fx-ref)
+      [(%string-int-ref)
        (cg-string-ref rands fs dd cd nextlab
          (instructions
            `(movl (t1 ,(- ws string-tag)) ac)
            `(sall ,tag-len ac)))]
-      [(%string-fx-set!)
+      [(%string-int-set!)
        (cg-string-set rands fs dd cd nextlab
          (instructions
            `(sarl ,tag-len t2)

@@ -578,6 +578,14 @@
            `(movl (t1 ,(- string-tag)) ac)
            `(sarl 1 ac) ; forward bit
            `(andl ,(not32 mask) ac)))]
+      [(%string-ptr-ref)
+       (cg-string-ref rands fs dd cd nextlab
+         (instructions
+           `(movl (t1 ,(- ws string-tag)) ac)))]
+      [(%string-ptr-set!)
+       (cg-string-set rands fs dd cd nextlab
+         (instructions
+           `(movl t2 (t1 ,(- ws string-tag)))))]
       [(%string-byte-ref)
        (cg-string-ref rands fs dd cd nextlab
          (instructions

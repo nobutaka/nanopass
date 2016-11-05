@@ -39,6 +39,10 @@
          [open-args (list (string->asciiz "./data.txt") (string->asciiz "r"))])
      (let ([fp (foreign-call fopen (reverse open-args) (length open-args))])
        (string4->fx (foreign-call fgetc (list fp) 1)))) => "97\n"]
+  [(let ([echo_back (cproc 'ptr "echo_back")])
+     (echo_back '#(12 13))) => "#(12 13)\n"]
+  [(let ([echo_back (cproc 'ptr "echo_back")])
+     (echo_back 3.14)) => "3.140000\n"]
   [(let ([a_minus_b (cproc 'int "a_minus_b")])
      (a_minus_b 8 5)) => "3\n"]
   [(let ([data (make-bytevector 5)])

@@ -49,6 +49,8 @@
 )
 
 (add-tests-with-string-output "string4"
+  [(string4->obj (obj->string4 12)) => "12\n"]
+  [(string4->obj (obj->string4 '(12 13))) => "(12 13)\n"]
   [(string4->fx (fx->string4 12)) => "12\n"]
   [(string4? 0) => "#f\n"]
   [(string4? #f) => "#f\n"]

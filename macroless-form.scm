@@ -196,17 +196,6 @@
               ((= i len) s)
             (string-byte-set! s i (string-byte-ref bv i))))))
 
-    (define obj->string4
-      (lambda (obj)
-        (let ([str (make-byte-string 4)])
-          (string-ptr-set! str 0 obj)
-          (mutate-to-string4! str)
-          str)))
-
-    (define string4->obj
-      (lambda (str)
-        (string-ptr-ref str 0)))
-
     (define fx->string4
       (lambda (n)
         (let ([str (make-byte-string 4)])
@@ -227,10 +216,9 @@
                         [(bytevector? x) x]
                         [(string? x) (string->asciiz x)]
                         [(fixnum? x) (fx->string4 x)]
-                        [else (obj->string4 x)]))]
+                        [else (fx->string4 0)]))]
               [convert-return-value
-                (cond [(eq? return-type 'ptr) string4->obj]
-                      [(eq? return-type 'int) string4->fx]
+                (cond [(eq? return-type 'int) string4->fx]
                       [(eq? return-type 'void) (lambda (x) #f)]
                       [else (lambda (x) x)])])
           (lambda args

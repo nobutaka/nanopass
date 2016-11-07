@@ -91,8 +91,6 @@
     (define vector-set! (lambda (v k obj) (%vector-set! v k obj)))
     (define make-byte-string (lambda (k) (%make-byte-string k)))
     (define string-size (lambda (str) (%string-size str)))
-    (define string-ptr-ref (lambda (str k) (%string-ptr-ref str k)))
-    (define string-ptr-set! (lambda (str k obj) (%string-ptr-set! str k obj)))
     (define string-byte-ref (lambda (str k) (%string-byte-ref str k)))
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
     (define string-int-ref (lambda (str k) (%string-int-ref str k)))

@@ -1,12 +1,3 @@
-(add-tests-with-string-output "string-ptr-set! and ref"
-  [(let ([s (make-byte-string 4)])
-     (string-ptr-set! s 0 12)
-     (string-ptr-ref s 0)) => "12\n"]
-  [(let ([s (make-byte-string 4)])
-     (string-ptr-set! s 0 '(12 13))
-     (string-ptr-ref s 0)) => "(12 13)\n"]
-)
-
 (add-tests-with-string-output "byte string"
   [(string-size (make-byte-string 0)) => "0\n"]
   [(string-size (make-byte-string 1)) => "1\n"]

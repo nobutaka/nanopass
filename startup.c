@@ -98,7 +98,7 @@ static unsigned int object_size(Ptr *obj)
     unsigned int tag = OBJTAG(obj);
     unsigned int len = OBJLENGTH(obj);
     unsigned int full_len = 1;
-    if (tag == string_tag || tag == number_tag || tag == immed_tag) {   /* string or string4 or bytevector */
+    if (tag == string_tag || tag == number_tag || tag == immed_tag) {   /* string or box or bytevector */
         full_len += ((len+3) / 4);
     } else if (tag == proc_tag) {
         full_len += 1+len;
@@ -206,7 +206,7 @@ void gc_collect(struct RootSet *root)
                 gc_scan += align(offset + len) * ws;
                 break;
             }
-        case number_tag:    /* string4 */
+        case number_tag:    /* box */
         case immed_tag:     /* bytevector */
         case string_tag:
             gc_scan += object_size(obj);

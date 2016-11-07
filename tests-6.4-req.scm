@@ -39,17 +39,17 @@
      (list (string-byte-ref s 0) (string-byte-ref s 1))) => "(255 238)\n"]  ; 0xff 0xee
 )
 
-(add-tests-with-string-output "string4"
-  [(string4->fx (fx->string4 12)) => "12\n"]
-  [(string4? 0) => "#f\n"]
-  [(string4? #f) => "#f\n"]
-  [(string4? '()) => "#f\n"]
-  [(string4? "s") => "#f\n"]
-  [(string4? (make-byte-string 4)) => "#f\n"]
+(add-tests-with-string-output "box"
+  [(box->fx (fx->box 12)) => "12\n"]
+  [(box? 0) => "#f\n"]
+  [(box? #f) => "#f\n"]
+  [(box? '()) => "#f\n"]
+  [(box? "s") => "#f\n"]
+  [(box? (make-byte-string 4)) => "#f\n"]
   [(let ([s (make-byte-string 4)])
-     (mutate-to-string4! s)
-     (string4? s)) => "#t\n"]
-  [(string4? (fx->string4 12)) => "#t\n"]
+     (mutate-to-box! s)
+     (box? s)) => "#t\n"]
+  [(box? (fx->box 12)) => "#t\n"]
 )
 
 (add-tests-with-string-output "bytevector"

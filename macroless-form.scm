@@ -56,7 +56,7 @@
                                                vars)))))])
              (loop ,@vals)))))
 
-    (define string4-tag     0)
+    (define box-tag         0)
     (define bytevector-tag  1)
 
     ;; wraps primitives
@@ -137,9 +137,9 @@
               a
               (loop (cdr ls) (cons (car ls) a))))))
 
-    (define mutate-to-string4!
+    (define mutate-to-box!
       (lambda (str)
-        (object-tag-set! str string4-tag)))
+        (object-tag-set! str box-tag)))
 
     (define mutate-to-bytevector!
       (lambda (str)
@@ -151,9 +151,9 @@
             (= (object-tag-ref obj) tag)
             #f)))
 
-    (define string4?
+    (define box?
       (lambda (obj)
-        (mutated-string? obj string4-tag)))
+        (mutated-string? obj box-tag)))
 
     (define bytevector?
       (lambda (obj)
@@ -194,14 +194,14 @@
               ((= i len) s)
             (string-byte-set! s i (string-byte-ref bv i))))))
 
-    (define fx->string4
+    (define fx->box
       (lambda (n)
         (let ([str (make-byte-string 4)])
           (string-int-set! str 0 n)
-          (mutate-to-string4! str)
+          (mutate-to-box! str)
           str)))
 
-    (define string4->fx
+    (define box->fx
       (lambda (str)
         (string-int-ref str 0)))
 
@@ -210,13 +210,13 @@
         (let ([fptr (dlsym (string->asciiz name))]
               [convert-argument
                 (lambda (x)
-                  (cond [(string4? x) x]
+                  (cond [(box? x) x]
                         [(bytevector? x) x]
                         [(string? x) (string->asciiz x)]
-                        [(fixnum? x) (fx->string4 x)]
-                        [else (fx->string4 0)]))]
+                        [(fixnum? x) (fx->box x)]
+                        [else (fx->box 0)]))]
               [convert-return-value
-                (cond [(eq? return-type 'int) string4->fx]
+                (cond [(eq? return-type 'int) box->fx]
                       [(eq? return-type 'void) (lambda (x) #f)]
                       [else (lambda (x) x)])])
           (lambda args

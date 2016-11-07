@@ -19,7 +19,7 @@
 
 (define imm-mask #b11111111)
 
-(define string4-tag     #b000)
+(define box-tag         #b000)
 (define bytevector-tag  #b001)
 
 (define attr-mask #b1111)
@@ -627,7 +627,7 @@
            `(pushl t1)
            `(call _dlsym_subr)
            `(addl ,(* 4 ws) sp)           ; pop 16 bytes
-           (cg-retval-to-string4 fs)))]
+           (cg-retval-to-box fs)))]
       [(%foreign-call)
        (cg-set-inline cg-ternary-rands rands fs dd cd nextlab
          (instructions
@@ -654,9 +654,9 @@
                  set-t3-to-car                    ; t3=car
                  `(movl (t3 ,(- string-tag)) t3)  ; t3=object header
                  `(andl ,(ash mask 1) t3)
-                 `(cmpl ,string4-tag t3)
+                 `(cmpl ,box-tag t3)
                  `(jne ,elselab)
-                 ;; string4
+                 ;; box
                  set-t3-to-car            ; t3=car
                  `(pushl (t3 ,(- ws string-tag)))
                  set-t2-to-cdr-then-loop  ; t2=cdr
@@ -685,7 +685,7 @@
            `(movl _gc_free ap)
            `(movl (fp ,fs) cp)
            `(subl ,closure-tag cp)
-           (cg-retval-to-string4 fs)))]
+           (cg-retval-to-box fs)))]
       [(%set-global-refs!)
        (cg-set-inline cg-unary-rand rands fs dd cd nextlab
          (instructions
@@ -766,12 +766,12 @@
         `(addl t2 t1)
         loadcode))))
 
-(define cg-retval-to-string4
+(define cg-retval-to-box
   (lambda (fs)
     (instructions
       `(movl ac t1)
       (cg-fix-allocate 2 'ac (cg-framesize fs) '())
-      `(movl ,(header 4 string4-tag) (ac 0))
+      `(movl ,(header 4 box-tag) (ac 0))
       `(movl t1 (ac ,ws))
       (cg-type-tag string-tag 'ac))))
 

@@ -153,6 +153,12 @@
       (lambda (obj)
         (mutated-string? obj bytevector-tag)))
 
+    (define make-box
+      (lambda ()
+        (let ([str (make-byte-string 4)])
+          (object-tag-set! str box-tag)
+          str)))
+
     (define make-bytevector
       (lambda (k)
         (let ([str (make-byte-string k)])
@@ -190,8 +196,7 @@
 
     (define fx->box
       (lambda (n)
-        (let ([str (make-byte-string 4)])
-          (object-tag-set! str box-tag)
+        (let ([str (make-box)])
           (string-int-set! str 0 n)
           str)))
 

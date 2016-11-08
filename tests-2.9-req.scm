@@ -12,18 +12,16 @@
   [(box? (dlsym (string->asciiz "twelve"))) => "#t\n"]
   [(box? (foreign-call (dlsym (string->asciiz "twelve")) '() 0)) => "#t\n"]
   [(let ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]
-         [a (make-byte-string 4)]
-         [b (make-byte-string 4)])
+         [a (make-box)]
+         [b (make-box)])
      (string-byte-set! a 0 8)
      (string-byte-set! a 1 0)
      (string-byte-set! a 2 0)
      (string-byte-set! a 3 0)
-     (object-tag-set! a box-tag)
      (string-byte-set! b 0 5)
      (string-byte-set! b 1 0)
      (string-byte-set! b 2 0)
      (string-byte-set! b 3 0)
-     (object-tag-set! b box-tag)
      (string-byte-ref (foreign-call a_minus_b (list b a) 2) 0))
    => "3\n"]
   [(let ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]

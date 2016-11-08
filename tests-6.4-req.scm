@@ -52,9 +52,7 @@
   [(box? '()) => "#f\n"]
   [(box? "s") => "#f\n"]
   [(box? (make-byte-string 4)) => "#f\n"]
-  [(let ([s (make-byte-string 4)])
-     (object-tag-set! s box-tag)
-     (box? s)) => "#t\n"]
+  [(box? (make-box)) => "#t\n"]
   [(box? (fx->box 12)) => "#t\n"]
 )
 

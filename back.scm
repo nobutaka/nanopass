@@ -787,6 +787,7 @@
       `(movl t1 (ac ,ws))
       (cg-type-tag string-tag 'ac))))
 
+;; always true and have no side-effects 
 (define cg-true-inline
   (lambda (rander rands fs dd cd nextlab code)
     (if (eq? dd 'effect)
@@ -797,6 +798,7 @@
           (cg-store 'ac dd)
           (cg-jump cd nextlab)))))
 
+;; have side-effects 
 (define cg-set-inline
   (lambda (rander rands fs dd cd nextlab code)
     (instructions
@@ -808,6 +810,7 @@
             (cg-store 'ac dd)        ; why not?
             (cg-jump cd nextlab))))))
 
+;; true or false and have no side-effects
 (define cg-ref-inline
   (lambda (rander rands fs dd cd nextlab code)
     (if (eq? dd 'effect)

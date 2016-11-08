@@ -798,7 +798,7 @@
           (cg-store 'ac dd)
           (cg-jump cd nextlab)))))
 
-;; have side-effects 
+;; always true and have side-effects 
 (define cg-set-inline
   (lambda (rander rands fs dd cd nextlab code)
     (instructions

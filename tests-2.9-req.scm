@@ -18,12 +18,12 @@
      (string-byte-set! a 1 0)
      (string-byte-set! a 2 0)
      (string-byte-set! a 3 0)
-     (mutate-to-box! a)
+     (object-tag-set! a box-tag)
      (string-byte-set! b 0 5)
      (string-byte-set! b 1 0)
      (string-byte-set! b 2 0)
      (string-byte-set! b 3 0)
-     (mutate-to-box! b)
+     (object-tag-set! b box-tag)
      (string-byte-ref (foreign-call a_minus_b (list b a) 2) 0))
    => "3\n"]
   [(let ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]

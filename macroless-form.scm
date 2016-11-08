@@ -139,14 +139,6 @@
               a
               (loop (cdr ls) (cons (car ls) a))))))
 
-    (define mutate-to-box!
-      (lambda (str)
-        (object-tag-set! str box-tag)))
-
-    (define mutate-to-bytevector!
-      (lambda (str)
-        (object-tag-set! str bytevector-tag)))
-
     (define mutated-string?
       (lambda (obj tag)
         (if (string? obj)
@@ -164,7 +156,7 @@
     (define make-bytevector
       (lambda (k)
         (let ([str (make-byte-string k)])
-          (mutate-to-bytevector! str)
+          (object-tag-set! str bytevector-tag)
           str)))
 
     (define string->asciiz
@@ -199,8 +191,8 @@
     (define fx->box
       (lambda (n)
         (let ([str (make-byte-string 4)])
+          (object-tag-set! str box-tag)
           (string-int-set! str 0 n)
-          (mutate-to-box! str)
           str)))
 
     (define box->fx

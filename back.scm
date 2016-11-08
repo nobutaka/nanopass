@@ -598,6 +598,16 @@
          (instructions
            `(sarl ,tag-len t2)
            `(movl t2 (t1 ,(- ws string-tag)))))]
+      [(%string-float-ref)
+       (cg-string-ref rands fs dd cd nextlab
+         (instructions
+           `(movl (t1 ,(- ws string-tag)) ac)
+           (cg-type-tag float-tag 'ac)))]
+      [(%string-float-set!)
+       (cg-string-set rands fs dd cd nextlab
+         (instructions
+           `(andl ,(not32 mask) t2)
+           `(movl t2 (t1 ,(- ws string-tag)))))]
       [(%object-tag-set!)
        (cg-set-inline cg-binary-rands rands fs dd cd nextlab
          (instructions

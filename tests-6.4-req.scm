@@ -39,6 +39,12 @@
      (list (string-byte-ref s 0) (string-byte-ref s 1))) => "(255 238)\n"]  ; 0xff 0xee
 )
 
+(add-tests-with-string-output "string-float-set! and ref"
+  [(let ([s (make-byte-string 8)])
+     (string-float-set! s 3 1.2)
+     (string-float-ref s 3)) => "1.200000\n"]
+)
+
 (add-tests-with-string-output "box"
   [(box->fx (fx->box 12)) => "12\n"]
   [(box? 0) => "#f\n"]

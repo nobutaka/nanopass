@@ -95,6 +95,8 @@
     (define string-byte-set! (lambda (str k n) (%string-byte-set! str k n)))
     (define string-int-ref (lambda (str k) (%string-int-ref str k)))
     (define string-int-set! (lambda (str k n) (%string-int-set! str k n)))
+    (define string-float-ref (lambda (str k) (%string-float-ref str k)))
+    (define string-float-set! (lambda (str k n) (%string-float-set! str k n)))
     (define object-tag-set! (lambda (obj tag) (%object-tag-set! obj tag)))
     (define object-tag-ref (lambda (obj) (%object-tag-ref obj)))
     (define dlsym (lambda (asciiz) (%dlsym asciiz)))

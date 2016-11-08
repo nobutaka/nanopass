@@ -1,3 +1,11 @@
+(add-tests-with-string-output "flonum?"
+  [(flonum? 0.0) => "#t\n"]
+  [(flonum? -1.2) => "#t\n"]
+  [(flonum? 0) => "#f\n"]
+  [(flonum? '()) => "#f\n"]
+  [(flonum? "s") => "#f\n"]
+)
+
 (add-tests-with-string-output "flonum"
   [(flonum 0) => "0.000000\n"]
   [(flonum 1) => "1.000000\n"]

@@ -446,6 +446,8 @@
            `(movl t1 ac)
            `(imull t2 ac)
            `(sall ,tag-len ac)))]
+      [(%flonum?)
+       (cg-type-test exp float-tag mask rands fs dd cd nextlab)]
       [(%flonum)
        (cg-true-inline cg-unary-rand rands fs dd cd nextlab
          (instructions

@@ -68,6 +68,7 @@
     (define fx* (lambda (x1 x2) (%fx* x1 x2)))
     (define fx= (lambda (x1 x2) (%eq? x1 x2)))
     (define fx< (lambda (x1 x2) (%lt? x1 x2)))
+    (define flonum? (lambda (obj) (%flonum? obj)))
     (define flonum (lambda (x) (%flonum x)))
     (define fl+ (lambda (x1 x2) (%fl+ x1 x2)))
     (define fl- (lambda (x1 x2) (%fl- x1 x2)))

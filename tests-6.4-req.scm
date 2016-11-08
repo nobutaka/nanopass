@@ -46,14 +46,14 @@
 )
 
 (add-tests-with-string-output "box"
-  [(box->fx (fx->box 12)) => "12\n"]
+  [(box->fixnum (fixnum->box 12)) => "12\n"]
   [(box? 0) => "#f\n"]
   [(box? #f) => "#f\n"]
   [(box? '()) => "#f\n"]
   [(box? "s") => "#f\n"]
   [(box? (make-byte-string 4)) => "#f\n"]
   [(box? (make-box)) => "#t\n"]
-  [(box? (fx->box 12)) => "#t\n"]
+  [(box? (fixnum->box 12)) => "#t\n"]
 )
 
 (add-tests-with-string-output "bytevector"

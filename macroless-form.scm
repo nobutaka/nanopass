@@ -195,13 +195,13 @@
               ((= i len) s)
             (string-byte-set! s i (string-byte-ref bv i))))))
 
-    (define fx->box
+    (define fixnum->box
       (lambda (n)
         (let ([str (make-box)])
           (string-int-set! str 0 n)
           str)))
 
-    (define box->fx
+    (define box->fixnum
       (lambda (str)
         (string-int-ref str 0)))
 
@@ -213,10 +213,10 @@
                   (cond [(box? x) x]
                         [(bytevector? x) x]
                         [(string? x) (string->asciiz x)]
-                        [(fixnum? x) (fx->box x)]
-                        [else (fx->box 0)]))]
+                        [(fixnum? x) (fixnum->box x)]
+                        [else (fixnum->box 0)]))]
               [convert-return-value
-                (cond [(eq? return-type 'int) box->fx]
+                (cond [(eq? return-type 'int) box->fixnum]
                       [(eq? return-type 'void) (lambda (x) #f)]
                       [else (lambda (x) x)])])
           (lambda args

@@ -11,6 +11,7 @@
 (add-tests-with-string-output "foreign function call"
   [(box? (dlsym (string->asciiz "twelve"))) => "#t\n"]
   [(box? (foreign-call (dlsym (string->asciiz "twelve")) '() 0)) => "#t\n"]
+  [(fixnum? (foreign-call-int (dlsym (string->asciiz "twelve")) '() 0)) => "#t\n"]
   [(let ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]
          [a (make-box)]
          [b (make-box)])
@@ -22,21 +23,20 @@
      (string-byte-set! b 1 0)
      (string-byte-set! b 2 0)
      (string-byte-set! b 3 0)
-     (string-byte-ref (foreign-call a_minus_b (list b a) 2) 0))
-   => "3\n"]
+     (foreign-call-int a_minus_b (list b a) 2)) => "3\n"]
   [(let ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]
          [args (list (fixnum->box 8) (fixnum->box 5))])
-     (box->fixnum (foreign-call a_minus_b (reverse args) (length args)))) => "3\n"]
+     (foreign-call-int a_minus_b (reverse args) (length args))) => "3\n"]
   [(let ([data (make-byte-string 5)])
      (string-byte-set! data 4 12)
      (let ([get_byte (dlsym (string->asciiz "get_byte"))]
            [args (list data (fixnum->box 4))])
-       (box->fixnum (foreign-call get_byte (reverse args) (length args))))) => "12\n"]
+       (foreign-call-int get_byte (reverse args) (length args)))) => "12\n"]
   [(let ([fopen (dlsym (string->asciiz "fopen"))]
          [fgetc (dlsym (string->asciiz "fgetc"))]
          [open-args (list (string->asciiz "./data.txt") (string->asciiz "r"))])
      (let ([fp (foreign-call fopen (reverse open-args) (length open-args))])
-       (box->fixnum (foreign-call fgetc (list fp) 1)))) => "97\n"]
+       (foreign-call-int fgetc (list fp) 1))) => "97\n"]
   [(let ([a_minus_b (cproc 'int "a_minus_b")])
      (a_minus_b 8 5)) => "3\n"]
   [(let ([data (make-bytevector 5)])

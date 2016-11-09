@@ -102,6 +102,7 @@
     (define object-tag-ref (lambda (obj) (%object-tag-ref obj)))
     (define dlsym (lambda (asciiz) (%dlsym asciiz)))
     (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
+    (define foreign-call-int (lambda (fptr args size) (%foreign-call-int fptr args size)))
     (define set-global-refs! (lambda (obj) (%set-global-refs! obj)))
     (define global-refs (lambda () (%global-refs)))
     (define apply (lambda (proc args) (%apply proc args)))
@@ -215,13 +216,13 @@
                         [(string? x) (string->asciiz x)]
                         [(fixnum? x) (fixnum->box x)]
                         [else (fixnum->box 0)]))]
-              [convert-return-value
-                (cond [(eq? return-type 'int) box->fixnum]
-                      [(eq? return-type 'void) (lambda (x) #f)]
-                      [else (lambda (x) x)])])
+              [fcall
+                (cond [(eq? return-type 'int) foreign-call-int]
+                      [(eq? return-type 'void) foreign-call-int]
+                      [else foreign-call])])
           (lambda args
             (let ([converted-args (map convert-argument args)])
-              (convert-return-value (foreign-call fptr (reverse converted-args) (length converted-args))))))))
+              (fcall fptr (reverse converted-args) (length converted-args)))))))
 ))
 
 (define append-library

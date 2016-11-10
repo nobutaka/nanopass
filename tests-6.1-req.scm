@@ -51,6 +51,6 @@
               (lambda (n x)
                 (if (= n 10000)
                     x
-                    (loop (+ n 1) (foreign-call a_minus_b (reverse (list (fixnum->box x) (fixnum->box 1))) 2))))])
+                    (loop (+ n 1) (foreign-call-int a_minus_b (reverse (list (fixnum->box x) (fixnum->box 1))) 2))))])
      (loop 0 0)) => "-10000\n"]
 )

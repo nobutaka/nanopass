@@ -328,13 +328,14 @@ static void print(Ptr ptr)
 
 int main(int argc, char *argv[])
 {
+    stack_bottom = malloc(DEFAULT_STACK_SIZE);
+    memset(stack_bottom, 0xcc, DEFAULT_STACK_SIZE);
+
 #ifdef HEAP_SIZE
     unsigned int heap_size = HEAP_SIZE;
 #else
     unsigned int heap_size = DEFAULT_HEAP_SIZE;
 #endif
-    stack_bottom = malloc(DEFAULT_STACK_SIZE);
-    memset(stack_bottom, 0xcc, DEFAULT_STACK_SIZE);
     gc_initialize(heap_size);
 
     rtldDefault = dlopen(0, RTLD_NOW | RTLD_GLOBAL);

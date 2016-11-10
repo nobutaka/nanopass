@@ -1,7 +1,7 @@
 # nanopass scheme compiler in scheme for x86
 
 This is a scheme compiler for my study.
-It runs on OS X (Intel) only.
+It runs on macOS only.
 
 ## How to compile fib
 

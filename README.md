@@ -1,8 +1,11 @@
+# nanopass scheme compiler in scheme for x86
+
 This is a scheme compiler for my study.
 It runs on OS X (Intel) only.
 
-How to compile fib.
+## How to compile fib
 
+```
 $ gosh
 gosh> (load "./compiler.scm")
 gosh> (x86
@@ -26,12 +29,13 @@ gosh> (x86
                                  (fib 35))))))))))))))
 $ ./a.out
 9227465
+```
 
-References.
+## References
 
-[1] Summer Scheme Workshop; Compiling Scheme, http://www.cs.indiana.edu/eip/compile/
-[2] Ur-Scheme, http://www.canonical.org/~kragen/sw/urscheme/
-[3] An Incremental Approach to Compiler Construction, http://www.cs.indiana.edu/~aghuloum/
-[4] The 90 Minute Scheme to C compiler, http://www.iro.umontreal.ca/~boucherd/mslug/meetings/20041020/minutes-en.html
-[5] scheme -> LLVM, http://www.ida.liu.se/~tobnu/scheme2llvm/
-[6] 非決定的計算オペレータ amb の並列化, http://www.principia-m.com/ts/0127/index-jp.html
+1. Summer Scheme Workshop; Compiling Scheme, http://www.cs.indiana.edu/eip/compile/
+1. Ur-Scheme, http://www.canonical.org/~kragen/sw/urscheme/
+1. An Incremental Approach to Compiler Construction, http://www.cs.indiana.edu/~aghuloum/
+1. The 90 Minute Scheme to C compiler, http://www.iro.umontreal.ca/~boucherd/mslug/meetings/20041020/minutes-en.html
+1. scheme -> LLVM, http://www.ida.liu.se/~tobnu/scheme2llvm/
+1. 非決定的計算オペレータ amb の並列化, http://www.principia-m.com/ts/0127/index-jp.html

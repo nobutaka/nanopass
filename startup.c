@@ -44,8 +44,8 @@ struct RootSet {
 #define t2_bit      (1<<2)
 #define t3_bit      (1<<3)
 
-#define default_heap_size   (4*10000)
-#define default_stack_size  (4*10000)
+#define DEFAULT_HEAP_SIZE   (4*10000)
+#define DEFAULT_STACK_SIZE  (4*10000)
 
 #define PTR(ptr)    ((Ptr)(ptr))
 #define TAG(ptr)    (PTR(ptr) & mask)
@@ -328,9 +328,14 @@ static void print(Ptr ptr)
 
 int main(int argc, char *argv[])
 {
-    stack_bottom = malloc(default_stack_size);
-    memset(stack_bottom, 0xcc, default_stack_size);
-    gc_initialize(default_heap_size);
+#ifdef HEAP_SIZE
+    unsigned int heap_size = HEAP_SIZE;
+#else
+    unsigned int heap_size = DEFAULT_HEAP_SIZE;
+#endif
+    stack_bottom = malloc(DEFAULT_STACK_SIZE);
+    memset(stack_bottom, 0xcc, DEFAULT_STACK_SIZE);
+    gc_initialize(heap_size);
 
     rtldDefault = dlopen(0, RTLD_NOW | RTLD_GLOBAL);
 

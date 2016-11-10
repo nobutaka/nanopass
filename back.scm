@@ -640,7 +640,7 @@
            `(call _dlsym_subr)
            `(addl ,(* 4 ws) sp)           ; pop 16 bytes
            (cg-retval-to-box fs)))]
-      [(%foreign-call %foreign-call-int)
+      [(%foreign-call %foreign-call-int %foreign-call-float)
        (cg-set-inline cg-ternary-rands rands fs dd cd nextlab
          (instructions
            ;; t1=fptr, t2=args, t3=size
@@ -700,6 +700,11 @@
            (case name
              [(%foreign-call-int)
               `(sall ,tag-len ac)]
+             [(%foreign-call-float)
+              (instructions
+                `(fstps (sp ,(- ws)))
+                `(movl (sp ,(- ws)) ac)
+                (cg-type-tag float-tag 'ac))]
              [else
               (cg-retval-to-box fs)])))]
       [(%set-global-refs!)

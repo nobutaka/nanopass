@@ -46,7 +46,7 @@
 )
 
 (add-tests-with-string-output "box"
-  [(box->fixnum (fixnum->box 12)) => "12\n"]
+  [(string-int-ref (fixnum->box 12) 0) => "12\n"]
   [(box? 0) => "#f\n"]
   [(box? #f) => "#f\n"]
   [(box? '()) => "#f\n"]

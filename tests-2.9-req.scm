@@ -39,6 +39,8 @@
        (foreign-call-int fgetc (list fp) 1))) => "97\n"]
   [(let ([a_minus_b (cproc 'int "a_minus_b")])
      (a_minus_b 8 5)) => "3\n"]
+  [(let ([sqrtf (cproc 'float "sqrtf")])
+     (sqrtf 2.0)) => "1.414213\n"]
   [(let ([data (make-bytevector 5)])
      (string-byte-set! data 4 12)
      (let ([get_byte (cproc 'int "get_byte")])

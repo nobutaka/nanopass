@@ -103,6 +103,7 @@
     (define dlsym (lambda (asciiz) (%dlsym asciiz)))
     (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
     (define foreign-call-int (lambda (fptr args size) (%foreign-call-int fptr args size)))
+    (define foreign-call-float (lambda (fptr args size) (%foreign-call-float fptr args size)))
     (define set-global-refs! (lambda (obj) (%set-global-refs! obj)))
     (define global-refs (lambda () (%global-refs)))
     (define apply (lambda (proc args) (%apply proc args)))
@@ -202,9 +203,11 @@
           (string-int-set! str 0 n)
           str)))
 
-    (define box->fixnum
-      (lambda (str)
-        (string-int-ref str 0)))
+    (define flonum->box
+      (lambda (n)
+        (let ([str (make-box)])
+          (string-float-set! str 0 n)
+          str)))
 
     (define cproc
       (lambda (return-type name)
@@ -215,10 +218,12 @@
                         [(bytevector? x) x]
                         [(string? x) (string->asciiz x)]
                         [(fixnum? x) (fixnum->box x)]
+                        [(flonum? x) (flonum->box x)]
                         [else (fixnum->box 0)]))]
               [fcall
                 (cond [(eq? return-type 'int) foreign-call-int]
                       [(eq? return-type 'void) foreign-call-int]
+                      [(eq? return-type 'float) foreign-call-float]
                       [else foreign-call])])
           (lambda args
             (let ([converted-args (map convert-argument args)])

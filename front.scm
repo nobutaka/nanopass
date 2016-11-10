@@ -20,7 +20,7 @@
     %string-int-ref %string-int-set!
     %string-float-ref %string-float-set!
     %object-tag-set! %object-tag-ref
-    %dlsym %foreign-call %foreign-call-int %set-global-refs! %global-refs
+    %dlsym %foreign-call %foreign-call-int %foreign-call-float %set-global-refs! %global-refs
     %apply))
 
 (define *keywords*

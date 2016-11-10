@@ -39,3 +39,4 @@ $ ./a.out
 1. The 90 Minute Scheme to C compiler, http://www.iro.umontreal.ca/~boucherd/mslug/meetings/20041020/minutes-en.html
 1. scheme -> LLVM, http://www.ida.liu.se/~tobnu/scheme2llvm/
 1. 非決定的計算オペレータ amb の並列化, http://www.principia-m.com/ts/0127/index-jp.html
+1. Tiny Renderer or how OpenGL works: software rendering in 500 lines of code, https://github.com/ssloy/tinyrenderer

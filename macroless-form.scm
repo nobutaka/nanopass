@@ -81,6 +81,7 @@
     (define - fx-)
     (define = fx=)
     (define < fx<)
+    (define boolean? (lambda (obj) (%boolean? obj)))
     (define car (lambda (x) (%car x)))
     (define cdr (lambda (x) (%cdr x)))
     (define cons (lambda (x1 x2) (%cons x1 x2)))
@@ -220,6 +221,7 @@
                         [(string? x) (string->asciiz x)]
                         [(fixnum? x) (fixnum->box x)]
                         [(flonum? x) (flonum->box x)]
+                        [(boolean? x) (if x (fixnum->box 1) (fixnum->box 0))]
                         [else (fixnum->box 0)]))]
               [fcall
                 (cond [(eq? return-type 'int) foreign-call-int]

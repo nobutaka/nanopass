@@ -22,7 +22,7 @@
 ;  [(vector? #f) => "#f\n"]
 ;  [(pair? (make-vector 12)) => "#f\n"]
   [(null? (make-vector 12)) => "#f\n"]
-;  [(boolean? (make-vector 12)) => "#f\n"]
+  [(boolean? (make-vector 12)) => "#f\n"]
   [(make-vector 0) => "#()\n"]
   [(let ([v (make-vector 2)])
      (vector-set! v 0 #t)

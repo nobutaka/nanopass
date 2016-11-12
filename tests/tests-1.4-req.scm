@@ -8,3 +8,12 @@
   [(if #\X (if 1 2 3) (if 4 5 6)) => "2\n"]
   [(+ (if (- 1 1) (- 13 1) 14) 1) => "13\n"]
 )
+
+(add-tests-with-string-output "boolean"
+  [(boolean? #t) => "#t\n"]
+  [(boolean? #f) => "#t\n"]
+  [(boolean? 1) => "#f\n"]
+  [(boolean? 0) => "#f\n"]
+  [(boolean? 1.0) => "#f\n"]
+  [(boolean? '()) => "#f\n"]
+)

@@ -8,6 +8,7 @@
   '(%eq? %lt?
     %fixnum? %fixnum %fx+ %fx- %fx*
     %flonum? %flonum %fl+ %fl- %fl* %fl/ %fl= %fl< %fl<=
+    %boolean?
     %car %cdr %cons
     %null?
     %string->uninterned-symbol

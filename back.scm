@@ -493,6 +493,8 @@
          (instructions
            (t->xmm)
            `(ucomiss xmm1 xmm0)))]
+      [(%boolean?)
+       (cg-type-test exp bool-tag imm-mask rands fs dd cd nextlab)]
       [(%car)
        (cg-ref-inline cg-unary-rand rands fs dd cd nextlab
          `(movl (t1 ,(- ws pair-tag)) ac))]

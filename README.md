@@ -1,9 +1,9 @@
-# nanopass scheme compiler in scheme for x86
+# Nanopass scheme compiler in scheme for x86
 
 This is a scheme compiler for my study.
 It runs on macOS only.
 
-## How to compile fib
+## Compile fib
 
 ```
 $ gosh
@@ -29,6 +29,18 @@ gosh> (x86
                                  (fib 35))))))))))))))
 $ ./a.out
 9227465
+```
+
+# Run sample code
+
+```
+$ ./run samples/tinyrenderer.scm
+```
+
+# Run test code
+
+```
+$ ./runtests
 ```
 
 ## References

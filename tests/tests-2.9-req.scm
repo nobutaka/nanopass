@@ -41,6 +41,8 @@
      (a_minus_b 8 5)) => "3\n"]
   [(let ([sqrtf (cproc 'float "sqrtf")])
      (sqrtf 2.0)) => "1.414213\n"]
+  [(let ([tobe_or_nottobe (cproc 'bool "tobe_or_nottobe")])
+     (tobe_or_nottobe)) => "#t\n"]
   [(let ([data (make-bytevector 5)])
      (string-byte-set! data 4 12)
      (let ([get_byte (cproc 'int "get_byte")])

@@ -104,6 +104,7 @@
     (define foreign-call (lambda (fptr args size) (%foreign-call fptr args size)))
     (define foreign-call-int (lambda (fptr args size) (%foreign-call-int fptr args size)))
     (define foreign-call-float (lambda (fptr args size) (%foreign-call-float fptr args size)))
+    (define foreign-call-bool (lambda (fptr args size) (if (= (foreign-call-int fptr args size) 0) #f #t)))
     (define set-global-refs! (lambda (obj) (%set-global-refs! obj)))
     (define global-refs (lambda () (%global-refs)))
     (define apply (lambda (proc args) (%apply proc args)))
@@ -224,6 +225,7 @@
                 (cond [(eq? return-type 'int) foreign-call-int]
                       [(eq? return-type 'void) foreign-call-int]
                       [(eq? return-type 'float) foreign-call-float]
+                      [(eq? return-type 'bool) foreign-call-bool]
                       [else foreign-call])])
           (lambda args
             (let ([converted-args (map convert-argument args)])

@@ -31,13 +31,13 @@ $ ./a.out
 9227465
 ```
 
-# Run sample code
+## Run sample code
 
 ```
 $ ./run samples/tinyrenderer.scm
 ```
 
-# Run test code
+## Run test code
 
 ```
 $ ./runtests

@@ -3,7 +3,7 @@
 This is a scheme compiler for my study.
 It runs on macOS only.
 
-## Compile fib
+## Compile fib step by step
 
 ```
 $ gosh

@@ -657,29 +657,54 @@
            ;; push arguments to c stack
            (let ([looplab (gen-label "ffloop")]
                  [breaklab (gen-label "ffbreak")]
-                 [elselab (gen-label "ffelse")]
+                 [number-elselab (gen-label "ffnumberelse")]
+                 [float-elselab (gen-label "fffloatelse")]
+                 [box-elselab (gen-label "ffboxelse")]
                  [set-t3-to-car `(movl (t2 ,(- ws pair-tag)) t3)]
                  [set-t2-to-cdr `(movl (t2 ,(- (* 2 ws) pair-tag)) t2)])
              (let ([set-t2-to-cdr-then-loop (instructions set-t2-to-cdr `(jmp ,looplab))])
                (instructions
                  `(label ,looplab)
                  `(cmpl ,(encode '()) t2)
+                 ;; null
                  `(je ,breaklab)
+                 ;; null else
+                 set-t3-to-car            ; t3=car
+                 `(andl ,mask t3)
+                 `(cmpl ,number-tag t3)
+                 `(jne ,number-elselab)
+                 ;; number
+                 set-t3-to-car            ; t3=car
+                 `(sarl ,tag-len t3)
+                 `(pushl t3)
+                 set-t2-to-cdr-then-loop  ; t2=cdr
+                 ;; number else
+                 `(label ,number-elselab)
+                 `(cmpl ,float-tag t3)
+                 `(jne ,float-elselab)
+                 ;; float
+                 set-t3-to-car            ; t3=car
+                 `(andl ,(not32 mask) t3)
+                 `(pushl t3)
+                 set-t2-to-cdr-then-loop  ; t2=cdr
+                 ;; float else
+                 `(label ,float-elselab)
                  set-t3-to-car                    ; t3=car
                  `(movl (t3 ,(- string-tag)) t3)  ; t3=object header
                  `(andl ,(ash mask 1) t3)
                  `(cmpl ,box-tag t3)
-                 `(jne ,elselab)
+                 `(jne ,box-elselab)
                  ;; box
                  set-t3-to-car            ; t3=car
                  `(pushl (t3 ,(- ws string-tag)))
                  set-t2-to-cdr-then-loop  ; t2=cdr
-                 ;; else
-                 `(label ,elselab)
+                 ;; box else
+                 `(label ,box-elselab)
                  set-t3-to-car            ; t3=car
                  `(addl ,(- ws string-tag) t3)
                  `(pushl t3)
                  set-t2-to-cdr-then-loop  ; t2=cdr
+                 ;; break
                  `(label ,breaklab))))
            ;; save scheme context
            (cg-type-tag closure-tag 'cp)

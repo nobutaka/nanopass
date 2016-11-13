@@ -13,24 +13,12 @@
   [(box? (foreign-call (dlsym (string->asciiz "twelve")) '() 0)) => "#t\n"]
   [(fixnum? (foreign-call-int (dlsym (string->asciiz "twelve")) '() 0)) => "#t\n"]
   [(let ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]
-         [a (make-box)]
-         [b (make-box)])
-     (string-byte-set! a 0 8)
-     (string-byte-set! a 1 0)
-     (string-byte-set! a 2 0)
-     (string-byte-set! a 3 0)
-     (string-byte-set! b 0 5)
-     (string-byte-set! b 1 0)
-     (string-byte-set! b 2 0)
-     (string-byte-set! b 3 0)
-     (foreign-call-int a_minus_b (list b a) 2)) => "3\n"]
-  [(let ([a_minus_b (dlsym (string->asciiz "a_minus_b"))]
-         [args (list (fixnum->box 8) (fixnum->box 5))])
+         [args (list 8 5)])
      (foreign-call-int a_minus_b (reverse args) (length args))) => "3\n"]
   [(let ([data (make-byte-string 5)])
      (string-byte-set! data 4 12)
      (let ([get_byte (dlsym (string->asciiz "get_byte"))]
-           [args (list data (fixnum->box 4))])
+           [args (list data 4)])
        (foreign-call-int get_byte (reverse args) (length args)))) => "12\n"]
   [(let ([fopen (dlsym (string->asciiz "fopen"))]
          [fgetc (dlsym (string->asciiz "fgetc"))]

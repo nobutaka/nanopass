@@ -160,12 +160,6 @@
       (lambda (obj)
         (mutated-string? obj bytevector-tag)))
 
-    (define make-box
-      (lambda ()
-        (let ([str (make-byte-string 4)])
-          (object-tag-set! str box-tag)
-          str)))
-
     (define make-bytevector
       (lambda (k)
         (let ([str (make-byte-string k)])
@@ -201,30 +195,18 @@
               ((= i len) s)
             (string-byte-set! s i (string-byte-ref bv i))))))
 
-    (define fixnum->box
-      (lambda (n)
-        (let ([str (make-box)])
-          (string-int-set! str 0 n)
-          str)))
-
-    (define flonum->box
-      (lambda (n)
-        (let ([str (make-box)])
-          (string-float-set! str 0 n)
-          str)))
-
     (define cproc
       (lambda (return-type name)
         (let ([fptr (dlsym (string->asciiz name))]
               [convert-argument
                 (lambda (x)
-                  (cond [(box? x) x]
+                  (cond [(fixnum? x) x]
+                        [(flonum? x) x]
+                        [(boolean? x) (if x 1 0)]
+                        [(box? x) x]
                         [(bytevector? x) x]
                         [(string? x) (string->asciiz x)]
-                        [(fixnum? x) (fixnum->box x)]
-                        [(flonum? x) (flonum->box x)]
-                        [(boolean? x) (if x (fixnum->box 1) (fixnum->box 0))]
-                        [else (fixnum->box 0)]))]
+                        [else 0]))]
               [fcall
                 (cond [(eq? return-type 'int) foreign-call-int]
                       [(eq? return-type 'void) foreign-call-int]

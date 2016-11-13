@@ -17,4 +17,5 @@
 (let ([image (tgaimage_new_w_h_bpp 100 100 3)])
   (line 13 20 80 40 image '#(255 255 255))
   (tgaimage_flip_vertically image)
-  (tgaimage_write_tga_file image "output.tga" #t))
+  (tgaimage_write_tga_file image "output.tga" #t)
+  (tgaimage_delete image))

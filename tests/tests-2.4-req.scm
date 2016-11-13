@@ -1,5 +1,5 @@
 (add-tests-with-string-output "letrec"
-  ;[(letrec () 12) => "12\n"]
+  [(letrec () 12) => "12\n"]
   [(letrec ([f 12]) f) => "12\n"]
   [(letrec ([f 12] [g 13]) (fx+ f g)) => "25\n"]
   [(letrec ([f 12] [g (lambda () f)])
@@ -22,9 +22,9 @@
   [(cond [#f #t] [#t #f]) => "#f\n"]
   [(cond [else 17]) => "17\n"]
   [(cond [#f] [#f 12] [12 13]) => "13\n"]
-  ;[(let ([else #t])
-  ;   (cond
-  ;     [else 1287])) => "1287\n"]
+  [(let ([else #t])
+     (cond
+       [else 1287])) => "1287\n"]
   ;[(let ([else 17])
   ;   (cond
   ;     [else])) => "17\n"]

@@ -1,3 +1,10 @@
+(add-tests-with-string-output "swap!"
+  [(let ([a 12]
+         [b 13])
+     (swap! a b)
+     (list a b)) => "(13 12)\n"]
+)
+
 (add-tests-with-string-output "letrec"
   [(letrec () 12) => "12\n"]
   [(letrec ([f 12]) f) => "12\n"]

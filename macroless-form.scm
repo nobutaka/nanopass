@@ -2,6 +2,13 @@
 
 (define library
   '(
+    (define-macro swap!
+      (lambda (a b)
+        (let ([tmp (gensym)])
+          `(let ([,tmp ,a])
+             (set! ,a ,b)
+             (set! ,b ,tmp)))))
+
     (define-macro let
       (lambda (decls . bodies)
         (if (pair? decls)

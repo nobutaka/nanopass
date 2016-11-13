@@ -18,22 +18,22 @@
            `(,cont-exp ,exp)]
           [('begin a b)
            (let ([b-exp (cps b cont-exp)]
-                 [r (new-var 'r)])
+                 [r (new-var 'R)])
              (cps a `(lambda (,r) ,b-exp)))]
           [('if t c a)
-           (let ([r (new-var 'r)]
+           (let ([r (new-var 'R)]
                  [c-exp (cps c cont-exp)]
                  [a-exp (cps a cont-exp)])
              (cps t
                   `(lambda (,r)
                      (if ,r ,c-exp ,a-exp))))]
           [('set! v e)
-           (let ([r (new-var 'r)])
+           (let ([r (new-var 'R)])
              (cps e
                   `(lambda (,r)
                      (,cont-exp (set! ,v ,r)))))]
           [('lambda formals body)
-           (let ([k (new-var 'k)])
+           (let ([k (new-var 'K)])
              `(,cont-exp (lambda ,(cons k formals) ,(cps body k))))]
           [else
            (let ([rator (car exp)]
@@ -58,7 +58,7 @@
     (if (null? exp)
         (inner (reverse args))
         (cps (car exp)
-             (let ([r (new-var 'r)])
+             (let ([r (new-var 'R)])
                `(lambda (,r)
                   ,(cps-list-body (cdr exp) inner (cons r args))))))))
 

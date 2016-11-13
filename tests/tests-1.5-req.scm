@@ -100,6 +100,12 @@
   [(fx< 1 1) => "#f\n"]
 )
 
+(add-tests-with-string-output "fxabs"
+  [(fxabs -1) => "1\n"]
+  [(fxabs 1) => "1\n"]
+  [(fxabs -8) => "8\n"]
+)
+
 (add-tests-with-string-output "if"
   [(if (fx= 12 13) 12 13) => "13\n"]
   [(if (fx= 12 12) 13 14) => "13\n"]

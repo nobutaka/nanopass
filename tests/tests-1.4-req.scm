@@ -17,3 +17,10 @@
   [(boolean? 1.0) => "#f\n"]
   [(boolean? '()) => "#f\n"]
 )
+
+(add-tests-with-string-output "set!"
+  ; regression test
+  [(lambda (steep)
+     (if steep 1 2)
+     (set! steep 3)) => "<procedure>\n"]
+)

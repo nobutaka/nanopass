@@ -177,7 +177,7 @@
            (cg a fs dd cd nextlab)))]
       [('build-closure code . fvars)
        (if (eq? dd 'effect)
-           (error "Error in build-closure: Not implemented")
+           (cg-jump (cd->true cd) nextlab)
            (let ([codelab (gen-label "code")])
              (set! todo (cons (list codelab code) todo))
              (instructions
@@ -827,7 +827,9 @@
 (define cg-true-inline
   (lambda (rander rands fs dd cd nextlab code)
     (if (eq? dd 'effect)
-        (error "Error in cg-true-inline: Not implemented")
+        (instructions
+          (cg-effect-rands rands fs)
+          (cg-jump (cd->true cd) nextlab))
         (instructions
           (rander rands fs)
           code
@@ -850,7 +852,17 @@
 (define cg-ref-inline
   (lambda (rander rands fs dd cd nextlab code)
     (if (eq? dd 'effect)
-        (error "Error in cg-ref-inline: Not implemented")
+        (if (pair? cd)
+            (let ([truelab (car cd)]
+                  [falselab (cadr cd)])
+              (instructions
+                (rander rands fs)
+                code
+                `(cmpl ,(encode #f) ac)
+                (cg-branch truelab falselab nextlab 'jne 'je)))
+            (instructions
+              (cg-effect-rands rands fs)
+              (cg-jump cd nextlab)))
         (instructions
           (rander rands fs)
           code

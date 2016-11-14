@@ -1,4 +1,4 @@
-;directive -lstdc++ samples/tgaimage.cpp samples/stub.cpp -DHEAP_SIZE=4000000
+;directive -lstdc++ samples/tgaimage.cpp samples/geometry.cpp samples/model.cpp samples/stub.cpp -DHEAP_SIZE=4000000
 
 (define tgaimage_new_w_h_bpp (cproc 'TGAImage* "tgaimage_new_w_h_bpp"))
 (define tgaimage_delete (cproc 'void "tgaimage_delete"))

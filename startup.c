@@ -6,7 +6,8 @@
 
 typedef long Ptr;
 
-struct RootSet {
+struct RootSet
+{
     unsigned int usedregs;
     Ptr *fp;
     Ptr cp;

@@ -39,4 +39,19 @@ void model_delete(Model *model)
     delete model;
 }
 
+int model_nfaces(Model *model)
+{
+    return model->nfaces();
+}
+
+float model_vert(Model *model, int i, int j)
+{
+    return model->vert(i)[j];
+}
+
+float model_face(Model *model, int idx, int j)
+{
+    return model->face(idx)[j];
+}
+
 }

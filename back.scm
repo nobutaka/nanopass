@@ -441,10 +441,18 @@
       [(%fx*)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
+           `(sarl ,tag-len t2)
+           `(movl t1 ac)
+           `(imull t2 ac)))]
+      [(%modulo)
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
            `(sarl ,tag-len t1)
            `(sarl ,tag-len t2)
            `(movl t1 ac)
-           `(imull t2 ac)
+           `(cdq)
+           `(idivl t2)
+           `(movl t3 ac)
            `(sall ,tag-len ac)))]
       [(%flonum?)
        (cg-type-test exp float-tag mask rands fs dd cd nextlab)]

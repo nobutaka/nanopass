@@ -43,9 +43,11 @@
             [(label)
              (printf "~a:" (cadr inst))]
             [else
-             (let ([rands (insert-delimiter (cdr inst))])
-               (printf "\t~s\t" (car inst))
-               (for-each print-elem rands))]))
+             (if (null? (cdr inst))
+                 (printf "\t~s" (car inst))
+                 (let ([rands (insert-delimiter (cdr inst))])
+                   (printf "\t~s\t" (car inst))
+                   (for-each print-elem rands)))]))
         (newline)
         (loop (cdr ls))))))
 

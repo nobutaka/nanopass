@@ -82,7 +82,22 @@
 
 (add-tests-with-string-output "fx*"
   [(fx* 3 -3) => "-9\n"]
+  [(fx* 0 -3) => "0\n"]
+  [(fx* 30 -30) => "-900\n"]
+  [(fx* 3 30) => "90\n"]
+  [(fx* 234 1) => "234\n"]
+  [(fx* 1 234) => "234\n"]
   [(fx* (fx* 1 -2) -3) => "6\n"]
+)
+
+(add-tests-with-string-output "modulo"
+  [(modulo -3 5) => "-3\n"]
+  [(modulo 3 -5) => "3\n"]
+  [(modulo -3 -5) => "-3\n"]
+  [(modulo 130 40) => "10\n"]
+  [(modulo 50 100) => "50\n"]
+  [(modulo 250 2) => "0\n"]
+  [(modulo 250 123) => "4\n"]
 )
 
 (add-tests-with-string-output "fx="

@@ -97,7 +97,7 @@
   [(fx/ 234 1) => "234\n"]
   [(fx/ 1 234) => "0\n"]
   [(fx/ 10 2) => "5\n"]
-  [(fx/ 10 3) => "9\n"]
+  [(fx/ 10 3) => "3\n"]
 )
 
 (add-tests-with-string-output "modulo"

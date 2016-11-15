@@ -416,9 +416,6 @@
       [(%eq?)
        (cg-binary-pred-inline exp rands fs dd cd nextlab 'je 'jne
          `(cmpl t2 t1))]
-      [(%lt?)
-       (cg-binary-pred-inline exp rands fs dd cd nextlab 'jl 'jge
-         `(cmpl t2 t1))]
       [(%fixnum?)
        (cg-type-test exp number-tag mask rands fs dd cd nextlab)]
       [(%fixnum)
@@ -444,6 +441,15 @@
            `(sarl ,tag-len t2)
            `(movl t1 ac)
            `(imull t2 ac)))]
+      [(%fx/)
+       (cg-true-inline cg-binary-rands rands fs dd cd nextlab
+         (instructions
+           `(sarl ,tag-len t1)
+           `(sarl ,tag-len t2)
+           `(movl t1 ac)
+           `(cdq)
+           `(idivl t2)
+           `(sall ,tag-len ac)))]
       [(%modulo)
        (cg-true-inline cg-binary-rands rands fs dd cd nextlab
          (instructions
@@ -454,6 +460,12 @@
            `(idivl t2)
            `(movl t3 ac)
            `(sall ,tag-len ac)))]
+      [(%fx<)
+       (cg-binary-pred-inline exp rands fs dd cd nextlab 'jl 'jge
+         `(cmpl t2 t1))]
+      [(%fx<=)
+       (cg-binary-pred-inline exp rands fs dd cd nextlab 'jle 'jg
+         `(cmpl t2 t1))]
       [(%flonum?)
        (cg-type-test exp float-tag mask rands fs dd cd nextlab)]
       [(%flonum)

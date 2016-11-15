@@ -90,6 +90,16 @@
   [(fx* (fx* 1 -2) -3) => "6\n"]
 )
 
+(add-tests-with-string-output "fx/"
+  [(fx/ 3 -3) => "-1\n"]
+  [(fx/ 0 -3) => "0\n"]
+  [(fx/ 30 -30) => "-1\n"]
+  [(fx/ 234 1) => "234\n"]
+  [(fx/ 1 234) => "0\n"]
+  [(fx/ 10 2) => "5\n"]
+  [(fx/ 10 3) => "9\n"]
+)
+
 (add-tests-with-string-output "modulo"
   [(modulo -3 5) => "-3\n"]
   [(modulo 3 -5) => "3\n"]
@@ -113,6 +123,12 @@
   [(fx< 12 13) => "#t\n"]
   [(fx< 12 -13) => "#f\n"]
   [(fx< 1 1) => "#f\n"]
+)
+
+(add-tests-with-string-output "fx<="
+  [(fx<= 12 13) => "#t\n"]
+  [(fx<= 12 -13) => "#f\n"]
+  [(fx<= 1 1) => "#t\n"]
 )
 
 (add-tests-with-string-output "fxabs"

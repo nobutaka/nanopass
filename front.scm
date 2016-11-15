@@ -5,8 +5,8 @@
 ;; ---------- Core Form
 
 (define *prim-names*
-  '(%eq? %lt?
-    %fixnum? %fixnum %fx+ %fx- %fx* %modulo
+  '(%eq?
+    %fixnum? %fixnum %fx+ %fx- %fx* %fx/ %modulo %fx< %fx<=
     %flonum? %flonum %fl+ %fl- %fl* %fl/ %fl= %fl< %fl<=
     %boolean?
     %car %cdr %cons

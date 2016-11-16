@@ -117,6 +117,8 @@
   [(fx= 16 (fx+ 13 13)) => "#f\n"]
   [(fx= (fx+ 13 3) 16) => "#t\n"]
   [(fx= (fx+ 13 13) 16) => "#f\n"]
+  [(if (fx= 12 13) 12 13) => "13\n"]
+  [(if (fx= 12 12) 13 14) => "13\n"]
 )
 
 (add-tests-with-string-output "fx<"
@@ -135,9 +137,4 @@
   [(fxabs -1) => "1\n"]
   [(fxabs 1) => "1\n"]
   [(fxabs -8) => "8\n"]
-)
-
-(add-tests-with-string-output "if"
-  [(if (fx= 12 13) 12 13) => "13\n"]
-  [(if (fx= 12 12) 13 14) => "13\n"]
 )

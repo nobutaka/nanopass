@@ -9,6 +9,22 @@
   [(+ (if (- 1 1) (- 13 1) 14) 1) => "13\n"]
 )
 
+(add-tests-with-string-output "and"
+  [(and (= 2 2) (< 1 2)) => "#t\n"]
+  [(and (= 2 2) (< 2 1)) => "#f\n"]
+  [(and 1 2) => "2\n"]
+  [(and #f #t) => "#f\n"]
+  [(and #t #t) => "#t\n"]
+)
+
+(add-tests-with-string-output "or"
+  [(or (= 2 2) (< 1 2)) => "#t\n"]
+  [(or (= 2 2) (< 2 1)) => "#t\n"]
+  [(or #f #f) => "#f\n"]
+  [(or #f #t) => "#t\n"]
+  [(or 1 2) => "1\n"]
+)
+
 (add-tests-with-string-output "boolean"
   [(boolean? #t) => "#t\n"]
   [(boolean? #f) => "#t\n"]
@@ -16,6 +32,13 @@
   [(boolean? 0) => "#f\n"]
   [(boolean? 1.0) => "#f\n"]
   [(boolean? '()) => "#f\n"]
+)
+
+(add-tests-with-string-output "not"
+  [(not #t) => "#f\n"]
+  [(not #f) => "#t\n"]
+  [(not 1) => "#f\n"]
+  [(not '()) => "#f\n"]
 )
 
 (add-tests-with-string-output "set!"

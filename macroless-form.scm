@@ -48,6 +48,18 @@
                          (begin ,@(cdar args))
                          (cond ,@(cdr args))))))))
 
+    (define-macro and
+      (lambda (a b)
+        `(if ,a (if ,b ,b #f) #f)))
+
+    (define-macro or
+      (lambda (a b)
+        `(if ,a ,a (if ,b ,b #f))))
+
+    (define-macro not
+      (lambda (obj)
+        `(if ,obj #f #t)))
+
     (define-macro do
       (lambda (var-form test-form . args)
         (let ([vars (map car var-form)]

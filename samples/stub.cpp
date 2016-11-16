@@ -49,9 +49,9 @@ float model_vert(Model *model, int i, int j)
     return model->vert(i)[j];
 }
 
-float model_face(Model *model, int idx, int j)
+int model_face(Model *model, int i, int j)
 {
-    return model->face(idx)[j];
+    return model->face(i)[j];
 }
 
 }

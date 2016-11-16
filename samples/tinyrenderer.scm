@@ -6,6 +6,18 @@
 (define tgaimage_flip_vertically (cproc 'bool "tgaimage_flip_vertically"))
 (define tgaimage_set_r_g_b (cproc 'bool "tgaimage_set_r_g_b"))
 
+(define model_new (cproc 'Model* "model_new"))
+(define model_delete (cproc 'void "model_delete"))
+(define model_nfaces (cproc 'int "model_nfaces"))
+(define model_vert
+  (let ([vert (cproc 'float "model_vert")])
+    (lambda (model i)
+      (vector (vert model i 0) (vert model i 1) (vert model i 2)))))
+(define model_face
+  (let ([face (cproc 'int "model_face")])
+    (lambda (model i)
+      (vector (face model i 0) (face model i 1) (face model i 2)))))
+
 (define line
   (lambda (x0 y0 x1 y1 image color)
     (let ([steep #f])
@@ -34,8 +46,21 @@
                        (set! error2 (fx- error2 (fx* dx 2))))
                 #f)))))))
 
-(let ([image (tgaimage_new_w_h_bpp 100 100 3)])
-  (line 13 20 80 40 image '#(255 255 255))
+(let ([model (model_new "samples/obj/african_head/african_head.obj")]
+      [image (tgaimage_new_w_h_bpp 800 800 3)])
+  (do ((i 0 (fx+ i 1)))
+      ((fx<= (model_nfaces model) i) #t)
+    (let ([face (model_face model i)])
+      (do ((j 0 (fx+ j 1)))
+          ((fx<= 3 j) #t)
+        (let ([v0 (model_vert model (vector-ref face j))]
+              [v1 (model_vert model (vector-ref face (modulo (fx+ j 1) 3)))])
+          (let ([x0 (fixnum (fl/ (fl* (fl+ (vector-ref v0 0) 1.0) 800.0) 2.0))]
+                [y0 (fixnum (fl/ (fl* (fl+ (vector-ref v0 1) 1.0) 800.0) 2.0))]
+                [x1 (fixnum (fl/ (fl* (fl+ (vector-ref v1 0) 1.0) 800.0) 2.0))]
+                [y1 (fixnum (fl/ (fl* (fl+ (vector-ref v1 1) 1.0) 800.0) 2.0))])
+            (line x0 y0 x1 y1 image '#(255 255 255)))))))
   (tgaimage_flip_vertically image)
   (tgaimage_write_tga_file image "output.tga" #t)
-  (tgaimage_delete image))
+  (tgaimage_delete image)
+  (model_delete model))

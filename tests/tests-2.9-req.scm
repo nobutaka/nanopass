@@ -59,6 +59,10 @@
      #f) => "#f\n"]
 )
 
+(add-tests-with-string-output "display"
+  [(display "abc\n") => "abc\n4\n"]
+)
+
 (add-tests-with-string-output "callback"
   [(let ([refs (make-vector 2)]
          [ccc (cproc 'int "call_call_closure")]

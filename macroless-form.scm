@@ -227,6 +227,8 @@
           (lambda args
             (let ([converted-args (map convert-argument args)])
               (fcall fptr (reverse converted-args) (length converted-args)))))))
+
+    (define display (cproc 'int "printf"))
 ))
 
 (define append-library

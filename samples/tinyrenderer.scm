@@ -4,7 +4,10 @@
 (define tgaimage_delete (cproc 'void "tgaimage_delete"))
 (define tgaimage_write_tga_file (cproc 'bool "tgaimage_write_tga_file"))
 (define tgaimage_flip_vertically (cproc 'bool "tgaimage_flip_vertically"))
-(define tgaimage_set_r_g_b (cproc 'bool "tgaimage_set_r_g_b"))
+(define tgaimage_set
+  (let ([set (cproc 'bool "tgaimage_set_r_g_b")])
+    (lambda (image x y color)
+      (set image x y (vector-ref color 0) (vector-ref color 1) (vector-ref color 2)))))
 
 (define model_new (cproc 'Model* "model_new"))
 (define model_delete (cproc 'void "model_delete"))
@@ -38,8 +41,8 @@
           (do ((x x0 (fx+ x 1)))
               ((fx< x1 x) #t)
             (if steep
-                (tgaimage_set_r_g_b image y x (vector-ref color 0) (vector-ref color 1) (vector-ref color 2))
-                (tgaimage_set_r_g_b image x y (vector-ref color 0) (vector-ref color 1) (vector-ref color 2)))
+                (tgaimage_set image y x color)
+                (tgaimage_set image x y color))
             (set! error2 (fx+ error2 derror2))
             (if (fx< dx error2)
                 (begin (set! y (fx+ y (if (fx< y0 y1) 1 -1)))

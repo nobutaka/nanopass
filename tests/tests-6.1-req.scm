@@ -1,3 +1,5 @@
+(set! *directive* "tests/ffi.c")
+
 (add-tests-with-string-output "gc"
   [(letrec ([fib
               (lambda (n)

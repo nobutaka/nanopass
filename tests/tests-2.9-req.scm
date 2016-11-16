@@ -1,3 +1,5 @@
+(set! *directive* "tests/ffi.c")
+
 (add-tests-with-string-output "low-level ffi"
   [(eq? (begin
           (set-global-refs! (cons 12 13))

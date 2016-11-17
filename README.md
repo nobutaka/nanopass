@@ -35,7 +35,10 @@ $ ./a.out
 
 ```
 $ ./run samples/tinyrenderer.scm
+$ open output.tga
 ```
+
+<img src="https://cloud.githubusercontent.com/assets/17505/20397116/e3ddc044-ad2b-11e6-8bbb-fd70815fd84e.png" width="256">
 
 ## Run test
 
